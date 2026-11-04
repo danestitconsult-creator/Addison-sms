@@ -1,0 +1,1 @@
+{"firestore":{"rules":"firestore.rules"},"hosting":{"public":".","ignore":["firebase.json","firestore.rules","README.txt","**/.*"],"headers":[{"source":"sw.js","headers":[{"key":"Cache-Control","value":"no-cache"}]}]}}

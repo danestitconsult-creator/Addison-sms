@@ -1,0 +1,2 @@
+{"name":"School System","short_name":"School","description":"Admissions, students, attendance, timetable, scores, report cards, fees and parents portal","start_url":"./","scope":"./","display":"standalone","orientation":"any","background_color":"#14532d","theme_color":"#14532d","categories":["education","productivity"],
+"icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"icon-maskable-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
