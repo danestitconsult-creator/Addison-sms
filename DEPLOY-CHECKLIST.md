@@ -83,3 +83,22 @@ Run each one and check the result. A "denied" result is correct where stated.
 - [ ] Each term: set the term dates in Setup, create invoices, enter scores, compute report cards,
       check them (Check before publishing), then publish.
 - [ ] Each update: edit `VERSION` in sw.js (for example school-v3) before uploading, so phones refresh.
+
+## J. Logo, region and district (Setup page)
+
+- [ ] Setup > School logo: upload the school crest. It is shrunk automatically and shows in the header and on report cards.
+- [ ] Setup > Region, then District. Check the district list for your region under "Edit the district list" against the official list.
+- [ ] Set your school's region and district before publishing report cards.
+
+## K. How the head pays and how the owner confirms
+
+1. Owner > Billing > "How schools pay you": enter your mobile money network and number, account name, and optionally a bank
+   account or an online payment link. Save.
+2. The head opens Setup > "Subscription and payment", sees the plans and your details, and pays.
+3. The head fills in "I have paid" with the amount, method, the transaction reference from the MoMo or bank message, and the date.
+4. Owner > Billing > "Payments reported by schools": check the money arrived on your MoMo or bank. Then Confirm
+   (the subscription runs on from the current end date) or Reject with a reason.
+5. Test this once with a small real amount before the first school pays.
+
+Note: each school is its own Firebase project, so the owner confirms payments in each school's app. A single
+dashboard for all schools is a separate build.
