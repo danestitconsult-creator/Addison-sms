@@ -26,7 +26,7 @@ input,select,textarea{font-size:16px}button,input,select{min-height:40px}.tw{-we
 </style></head><body>
 <header><div style="display:flex;align-items:center;gap:10px"><img id="hlogo" src="icon-192.png" alt="" width="34" height="34" style="border-radius:8px;object-fit:contain;background:#fff"><div><b id="hn">School System</b><div class="mut" id="hu" style="color:#bfe3cf"></div></div></div><div style="display:flex;gap:8px;align-items:center"><span id="net" class="tag ok">Online</span><button id="lo" class="s alt hide">Log out</button></div></header>
 <nav id="nav" class="hide"></nav>
-<main><section id="auth" class="card" style="max-width:420px;margin:30px auto"><h2 id="at">Log in</h2>
+<main><section id="auth" class="card" style="max-width:420px;margin:30px auto"><h2 id="at">Log in</h2><div class="mut" style="margin:-4px 0 10px">School System · version 3.1</div>
  <div id="regf" class="hide"><label>Full name</label><input id="rn"></div><label>Username</label><input id="un" autocapitalize="none"><label>Password</label><input id="pw" type="password">
  <button id="go" class="g">Log in</button><button id="sw" class="alt">Create an account</button><div id="am"></div></section><div id="v"></div></main><div id="print"></div>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -76,7 +76,7 @@ auth.onAuthStateChanged(async u=>{
  if(!s.exists){await auth.signOut();return say('am','Profile not found. Create the account again.','bad')}
  U={uid:u.uid,...s.data()};$('auth').classList.add('hide');$('lo').classList.remove('hide');net();begin()});
 function stop(){unsubs.forEach(f=>f());unsubs=[];scr.forEach(f=>f());scr=[]}
-function begin(){$('hu').textContent=U.name+' · '+ROLES[U.role];
+function begin(){$('hu').textContent=U.name+' · '+ROLES[U.role]+' · v3.1';
  if(!U.active||U.role==='pending'){V(`<div class="card"><h2>${U.active?'Waiting for a role':'Account disabled'}</h2><p>${U.active?'The school administrator must give your account a role. Close and reopen the app after that.':'Ask the school administrator.'}</p></div>`);return}
  const L=(q,f)=>unsubs.push(q.onSnapshot(f,e=>console.log(e.code)));
  L(COL('config').doc('main'),s=>{if(s.exists)CFG={...CFG,...s.data()};if(!CFG.grades)CFG.grades=GR0;if(!CFG.periods)CFG.periods=PER0;$('hn').textContent=CFG.name;$('hlogo').src=CFG.logo||'icon-192.png';const nl=locked();if(LK!==null&&LK!==nl&&U&&tab)go(tab,true);LK=nl});
