@@ -113,3 +113,10 @@ dashboard for all schools is a separate build.
       and opens an email to the parent, to attach manually.
 - [ ] Test once on a phone with your own address before sending to parents.
 - [ ] Rules: publish the new firestore.rules (it removes the exam rules and adds the join-code check).
+
+## M. Profiles, school code and logo (new)
+
+- [ ] Every user: the first screen is "My profile". Upload your photo there. It is saved to your own account only.
+- [ ] Head: the Dashboard shows the school code (used in student numbers and payment references), the staff join code,
+      and the school logo upload. If no join code is shown, press "Make a join code".
+- [ ] Publish the new firestore.rules. It lets each person change only their own photo.
