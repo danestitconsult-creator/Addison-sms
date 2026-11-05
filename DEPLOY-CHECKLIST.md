@@ -102,3 +102,14 @@ Run each one and check the result. A "denied" result is correct where stated.
 
 Note: each school is its own Firebase project, so the owner confirms payments in each school's app. A single
 dashboard for all schools is a separate build.
+
+## L. Staff joining, parent emails and report-card PDFs (new)
+
+- [ ] Setup > Staff join code: give this code to staff. Staff create their account, choose their role and enter the code.
+      Each person then appears under "Waiting for approval". Approve them there (or turn them down).
+- [ ] Students: fill in the Parent email for each child. Report cards are sent to this address.
+- [ ] Report cards: PDF downloads the report. "Email to parent" opens the phone's share sheet with the PDF attached,
+      so choose Gmail and type the parent's address (shown in the message). On a computer, it downloads the PDF
+      and opens an email to the parent, to attach manually.
+- [ ] Test once on a phone with your own address before sending to parents.
+- [ ] Rules: publish the new firestore.rules (it removes the exam rules and adds the join-code check).
