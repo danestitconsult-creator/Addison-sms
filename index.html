@@ -41,8 +41,8 @@ const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"]/g,c=>
 const COL=n=>db.collection(n),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),m2=x=>Math.round(x*100)/100,sleep=ms=>new Promise(r=>setTimeout(r,ms)),NL=String.fromCharCode(10);
 const say=(el,t,c)=>{$(el).innerHTML=t?`<div class="msg ${c||''}">${t}</div>`:''};
 const ROLES={owner:'Platform owner (billing)',admin:'Head or administrator',teacher:'Teacher',accountant:'Accountant',parent:'Parent or guardian',pending:'Waiting for a role'};
-const TABS={owner:['dash','bill','adm','stu','cls','att','tt','sc','rc','fee','acc','nt','set'],admin:['dash','adm','stu','cls','att','tt','sc','rc','fee','acc','nt','set'],teacher:['att','sc','rc','tt','stu','nt'],accountant:['fee','acc','stu','nt'],parent:['portal'],pending:[]};
-const TN={dash:'Dashboard',bill:'Platform billing',adm:'Admissions',stu:'Students',cls:'Classes and subjects',att:'Attendance',tt:'Timetable',sc:'Scores',rc:'Report cards',fee:'Fees',acc:'Accounts',nt:'Notices',set:'Setup',portal:'My children'};
+const TABS={owner:['dash','bill','adm','stu','cls','att','tt','sc','rc','fee','acc','nt','set'],admin:['dash','adm','stu','cls','att','tt','sc','rc','fee','acc','nt','set'],teacher:['me','att','sc','rc','tt','stu','nt'],accountant:['me','fee','acc','stu','nt'],parent:['me','portal'],pending:[]};
+const TN={me:'My profile',dash:'Dashboard',bill:'Platform billing',adm:'Admissions',stu:'Students',cls:'Classes and subjects',att:'Attendance',tt:'Timetable',sc:'Scores',rc:'Report cards',fee:'Fees',acc:'Accounts',nt:'Notices',set:'Setup',portal:'My children'};
 const LEVELS=['KG 1','KG 2','Basic 1','Basic 2','Basic 3','Basic 4','Basic 5','Basic 6','Basic 7 (JHS 1)','Basic 8 (JHS 2)','Basic 9 (JHS 3)'],DAYS=['Mon','Tue','Wed','Thu','Fri'];
 const GR0=['80|A|Excellent','70|B|Very good','60|C|Good','50|D|Credit','40|E|Pass','0|F|Needs improvement'].join(NL);
 const PER0=['Assembly|07:45-08:00|break','Period 1|08:00-08:40|lesson','Period 2|08:40-09:20|lesson','Period 3|09:20-10:00|lesson','Break|10:00-10:30|break','Period 4|10:30-11:10|lesson','Period 5|11:10-11:50|lesson','Period 6|11:50-12:30|lesson','Lunch|12:30-13:00|break','Period 7|13:00-13:40|lesson','Period 8|13:40-14:20|lesson'].join(NL);
@@ -86,7 +86,7 @@ function begin(){$('hu').textContent=U.name+' · '+ROLES[U.role]+' · v3.1';
  if(is('admin','accountant'))L(COL('feeplans'),sn=>{PLANS={};sn.docs.forEach(d=>{PLANS[d.id]=d.data()})});
  $('nav').classList.remove('hide');tab=TABS[U.role][0];nav();go(tab)}
 function nav(){$('nav').innerHTML=TABS[U.role].map(t=>`<button data-t="${t}" class="${t===tab?'on':''}">${TN[t]}</button>`).join('')}
-function go(t,keep){if(locked()&&!(t==='set'&&U&&U.role==='admin')){scr.forEach(f=>f());scr=[];tab=t;nav();return lockView()}scr.forEach(f=>f());scr=[];tab=t;if(!keep)st={};nav();({dash:vDash,adm:vAdm,stu:vStu,cls:vCls,att:vAtt,tt:vTT,sc:vSc,rc:vRc,fee:vFee,acc:vAcc,nt:vNt,set:vSet,portal:vPortal,bill:vBill})[t]()}
+function go(t,keep){if(locked()&&!(t==='set'&&U&&U.role==='admin')){scr.forEach(f=>f());scr=[];tab=t;nav();return lockView()}scr.forEach(f=>f());scr=[];tab=t;if(!keep)st={};nav();({dash:vDash,adm:vAdm,stu:vStu,cls:vCls,att:vAtt,tt:vTT,sc:vSc,rc:vRc,fee:vFee,acc:vAcc,nt:vNt,set:vSet,portal:vPortal,bill:vBill,me:vMe})[t]()}
 const classOpts=(sel,list)=>(list||CLS).map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${esc(c.name)}</option>`).join('');
 const stuLine=s=>`<b>${esc(s.name)}</b> <span class="mut">${esc(s.no)} · ${esc(s.className||'')}</span>`;
 
@@ -96,7 +96,7 @@ async function vDash(){V('<div class="card">Loading…</div>');
   const S=rows(ss),A=rows(at),I=rows(iv),byL={};S.forEach(s=>{byL[s.level]=(byL[s.level]||0)+1});let pres=0,tot=0;A.forEach(a=>Object.values(a.marks||{}).forEach(m=>{tot++;if(m==='P'||m==='L')pres++}));
   const billed=sum(I,i=>i.total),paid=sum(I,i=>i.paid),noT=CLS.filter(c=>!c.classTeacherId).length,noA=sum(CLS,c=>(c.subjects||[]).filter(s=>!ASG[c.id+'_'+s]).length);
   const card=(a,b,c)=>`<div class="card"><div class="mut">${a}</div><div class="big">${b}</div><div class="mut">${c||''}</div></div>`;
-  V(`<div class="msg" style="background:#dff3e6;color:#12532d">${esc(termName(tk()))}${CFG.termStart?' · '+fd(CFG.termStart)+' to '+fd(CFG.termEnd):''}</div><div class="row" style="margin-top:12px">${card('Students',S.length,Object.keys(byL).map(k=>esc(k)+' '+byL[k]).join(' · '))}${card('Attendance today',tot?Math.round(pres*100/tot)+'%':'-',A.length+' of '+CLS.length+' classes marked')}${card('Fees this term',money(paid),'Billed '+money(billed)+' · Owing '+money(billed-paid)+(billed?' · '+Math.round(paid*100/billed)+'% collected':''))}${card('Applications waiting',ap.size,'')}</div>
+  V(`${profileCardHtml()}<div class="msg" style="background:#dff3e6;color:#12532d">${esc(termName(tk()))}${CFG.termStart?' · '+fd(CFG.termStart)+' to '+fd(CFG.termEnd):''}</div><div class="row" style="margin-top:12px">${card('Students',S.length,Object.keys(byL).map(k=>esc(k)+' '+byL[k]).join(' · '))}${card('Attendance today',tot?Math.round(pres*100/tot)+'%':'-',A.length+' of '+CLS.length+' classes marked')}${card('Fees this term',money(paid),'Billed '+money(billed)+' · Owing '+money(billed-paid)+(billed?' · '+Math.round(paid*100/billed)+'% collected':''))}${card('Applications waiting',ap.size,'')}</div>
   ${noT||noA?`<div class="card"><h2>Needs attention</h2>${noT?`<div>${noT} class(es) have no class teacher.</div>`:''}${noA?`<div>${noA} class subject(s) have no teacher assigned.</div>`:''}</div>`:''}`)}
  catch(e){V('<div class="card msg bad">'+esc(why(e))+'</div>')}}
 
@@ -463,6 +463,17 @@ async function rcmail(id){try{const {blob,c}=await cardFile(id);const name=(c.no
  if(!c.parentEmail)return alert('The PDF is saved. This student has no parent email yet: add it on the Students page.');
  location.href='mailto:'+encodeURIComponent(c.parentEmail)+'?subject='+encodeURIComponent(name)+'&body='+encodeURIComponent(text+' The report PDF is in your downloads. Please attach it and send.')}
  catch(e){if(!(e&&e.name==='AbortError'))alert(e.message||why(e))}}
+
+
+/* ---------- my profile (every user), school code and logo (head) ---------- */
+function profileCardHtml(){const adm=is('admin');
+ return `<div class="card"><h2>My profile</h2><div class="row"><div style="text-align:center"><img src="${esc(U.photo||'')}" alt="" style="width:96px;height:96px;border-radius:50%;object-fit:cover;background:#e6eee9;${U.photo?'':'display:none;'}"><div class="mut">${U.photo?'Your photo':'No photo yet'}</div></div><div><div><b>${esc(U.name)}</b></div><div class="mut">${esc(ROLES[U.role]||'')}</div><label>Upload your photo</label><input id="ph1" type="file" accept="image/*"></div></div><div id="phm"></div></div>
+ ${adm?`<div class="card"><h2>School</h2><div class="row"><div><div class="mut">School code (used for student numbers and payment references)</div><div class="big">${esc(CFG.code||'Not set')}</div><div class="mut">You can change it under Setup.</div></div><div><div class="mut">Staff join code (give this to staff)</div><div class="big" style="letter-spacing:3px">${esc(CFG.joinCode||'Not set')}</div>${CFG.joinCode?'':'<button class="alt" data-a="newjoin">Make a join code</button>'}</div></div>
+ <h3>School logo</h3><div class="row"><div style="text-align:center">${CFG.logo?'<img src="'+esc(CFG.logo)+'" alt="" style="max-height:80px">':'<span class="mut">No logo yet</span>'}</div><div><label>Upload the school logo</label><input id="lg1" type="file" accept="image/*"></div></div><div id="lgm"></div></div>`:''}`}
+function vMe(){V(`${profileCardHtml()}<div class="card"><h2>Your role</h2><div>${esc(ROLES[U.role]||'')}</div><div class="mut" style="margin-top:6px">The head or administrator sets your role. Tell them if it is wrong.</div></div>`)}
+async function myPhoto(){const f=$('ph1').files[0];if(!f)return;try{const d=await compressImg(f,220);await COL('users').doc(U.uid).update({photo:d});U.photo=d;go(tab,true);say('phm','Photo saved.','good')}catch(e){say('phm',e.message||why(e),'bad')}}
+async function dashLogo(){const f=$('lg1').files[0];if(!f)return;try{const d=await compressImg(f,360);await COL('config').doc('main').set({logo:d},{merge:true});$('hlogo').src=d;say('lgm','Logo saved. It now shows in the header and on report cards.','good')}catch(e){say('lgm',e.message||why(e),'bad')}}
+document.addEventListener('change',e=>{if(e.target.id==='ph1')myPhoto();if(e.target.id==='lg1')dashLogo()});
 
 document.addEventListener('click',e=>{const t=e.target.closest('[data-t]');if(t&&t.closest('nav'))return go(t.dataset.t);const a=e.target.closest('[data-a]');if(a&&A[a.dataset.a])return A[a.dataset.a](a.dataset,a)});
 document.addEventListener('change',e=>{const t=e.target,d=t.dataset||{};if(d.a2==='ttset')ttset(t);if(d.u&&d.f){COL('users').doc(d.u).update({[d.f]:t.type==='checkbox'?t.checked:t.value}).catch(x=>alert(why(x)))}if(t.dataset&&t.dataset.sc!==undefined)scCalc(t.dataset.sc)});
