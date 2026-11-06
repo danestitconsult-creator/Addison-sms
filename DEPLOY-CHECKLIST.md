@@ -148,3 +148,42 @@ Upload owner.html next to index.html, then open it at the same address with owne
 7. Leave the app in the background for an hour, open it again: data loads without logging in again.
 8. After you upload a new version, open the app: a green bar says "A new version is ready. Tap here to refresh."
 9. A home-screen app keeps its own login. Log in again after adding it to the Home Screen.
+
+## Q. Backup and restore
+1. Setup > Backup and restore > Download backup file. Save it to Files or Drive.
+2. On a test school, choose that file under "Restore from a backup file". Check the counts shown match what you expect.
+3. "Add missing records only" must leave existing records unchanged. "Replace matching records" overwrites them with the file's version.
+4. Subscription and payment settings are never restored from a file, so a backup cannot change a school's paid-until date.
+
+## R. Attendance access and staff attendance
+**Publish these rules first.** Add to firestore.rules (inside `match /databases/{database}/documents`). If you already have helper functions for roles, reuse them instead of me() and isHead().
+```
+function me() { return get(/databases/$(database)/documents/users/$(request.auth.uid)).data; }
+function isHead() { return request.auth != null && me().role in ['admin','owner']; }
+
+match /staffAttendance/{id} {
+  allow read: if isHead() || (request.auth != null && resource.data.uid == request.auth.uid);
+  allow create: if request.auth != null
+    && request.resource.data.uid == request.auth.uid
+    && id == request.resource.data.date + '_' + request.auth.uid
+    && request.resource.data.self == true
+    && request.resource.data.at == request.time
+    && me().role in ['teacher','accountant','admin'];
+  allow create, update, delete: if isHead();
+}
+```
+Optional, makes the class rule real and not just hidden in the app: only the head or that class's class teacher may write a class register.
+```
+match /attendance/{id} {
+  allow write: if isHead() || (request.auth != null
+    && get(/databases/$(database)/documents/classes/$(request.resource.data.classId)).data.classTeacherId == request.auth.uid);
+}
+```
+(Keep whatever read rule you already have for attendance, because parents read it.)
+
+Tests:
+1. Log in as a teacher: Attendance shows only the classes where they are class teacher. A teacher with no class sees a message.
+2. Log in as the head: Attendance lists every class, and "All classes on this date" shows which registers are marked. Tap a class name to open it.
+3. A teacher opens My profile and taps "I am here: check in". It records the time, and marks Late if after the arrival time set on the Staff attendance page.
+4. The head opens Staff attendance, sees the teacher as Present, marks others, saves, then prints the term summary.
+5. A teacher cannot see other staff attendance (the tab is not shown).

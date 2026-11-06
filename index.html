@@ -51,8 +51,8 @@ const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"]/g,c=>
 const COL=n=>db.collection(n),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),m2=x=>Math.round(x*100)/100,sleep=ms=>new Promise(r=>setTimeout(r,ms)),NL=String.fromCharCode(10);
 const say=(el,t,c)=>{$(el).innerHTML=t?`<div class="msg ${c||''}">${t}</div>`:''};
 const ROLES={owner:'Platform owner (billing)',admin:'Head or administrator',teacher:'Teacher',accountant:'Accountant',parent:'Parent or guardian',pending:'Waiting for a role'};
-const TABS={owner:['dash','bill','adm','ids','stu','cls','att','tt','sc','rc','fee','acc','nt','set'],admin:['dash','adm','ids','stu','cls','att','tt','sc','rc','fee','acc','nt','set'],teacher:['me','att','sc','rc','tt','stu','nt'],accountant:['me','fee','acc','stu','nt'],parent:['me','portal'],pending:[]};
-const TN={me:'My profile',ids:'ID cards',dash:'Dashboard',bill:'Platform billing',adm:'Admissions',stu:'Students',cls:'Classes and subjects',att:'Attendance',tt:'Timetable',sc:'Scores',rc:'Report cards',fee:'Fees',acc:'Accounts',nt:'Notices',set:'Setup',portal:'My children'};
+const TABS={owner:['dash','bill','adm','ids','stu','cls','att','sta','tt','sc','rc','fee','acc','nt','set'],admin:['dash','adm','ids','stu','cls','att','sta','tt','sc','rc','fee','acc','nt','set'],teacher:['me','att','sc','rc','tt','stu','nt'],accountant:['me','fee','acc','stu','nt'],parent:['me','portal'],pending:[]};
+const TN={me:'My profile',ids:'ID cards',dash:'Dashboard',bill:'Platform billing',adm:'Admissions',stu:'Students',cls:'Classes and subjects',att:'Attendance',sta:'Staff attendance',tt:'Timetable',sc:'Scores',rc:'Report cards',fee:'Fees',acc:'Accounts',nt:'Notices',set:'Setup',portal:'My children'};
 const LEVELS=['KG 1','KG 2','Basic 1','Basic 2','Basic 3','Basic 4','Basic 5','Basic 6','Basic 7 (JHS 1)','Basic 8 (JHS 2)','Basic 9 (JHS 3)'],DAYS=['Mon','Tue','Wed','Thu','Fri'];
 const GR0=['80|A|Excellent','70|B|Very good','60|C|Good','50|D|Credit','40|E|Pass','0|F|Needs improvement'].join(NL);
 const PER0=['Assembly|07:45-08:00|break','Period 1|08:00-08:40|lesson','Period 2|08:40-09:20|lesson','Period 3|09:20-10:00|lesson','Break|10:00-10:30|break','Period 4|10:30-11:10|lesson','Period 5|11:10-11:50|lesson','Period 6|11:50-12:30|lesson','Lunch|12:30-13:00|break','Period 7|13:00-13:40|lesson','Period 8|13:40-14:20|lesson'].join(NL);
@@ -96,7 +96,7 @@ function begin(){$('hu').textContent=U.name+' · '+ROLES[U.role]+' · v3.1';
  if(is('admin','accountant'))L(COL('feeplans'),sn=>{PLANS={};sn.docs.forEach(d=>{PLANS[d.id]=d.data()})});
  $('nav').classList.remove('hide');tab=TABS[U.role][0];nav();go(tab)}
 function nav(){$('nav').innerHTML=TABS[U.role].map(t=>`<button data-t="${t}" class="${t===tab?'on':''}">${TN[t]}</button>`).join('')}
-function go(t,keep){if(locked()&&!(t==='set'&&U&&U.role==='admin')){scr.forEach(f=>f());scr=[];tab=t;nav();return lockView()}scr.forEach(f=>f());scr=[];tab=t;if(!keep)st={};nav();({dash:vDash,adm:vAdm,stu:vStu,cls:vCls,att:vAtt,tt:vTT,sc:vSc,rc:vRc,fee:vFee,acc:vAcc,nt:vNt,set:vSet,portal:vPortal,bill:vBill,me:vMe,ids:vIds})[t]()}
+function go(t,keep){if(locked()&&!(t==='set'&&U&&U.role==='admin')){scr.forEach(f=>f());scr=[];tab=t;nav();return lockView()}scr.forEach(f=>f());scr=[];tab=t;if(!keep)st={};nav();({dash:vDash,adm:vAdm,stu:vStu,cls:vCls,att:vAtt,sta:vSta,tt:vTT,sc:vSc,rc:vRc,fee:vFee,acc:vAcc,nt:vNt,set:vSet,portal:vPortal,bill:vBill,me:vMe,ids:vIds})[t]()}
 const classOpts=(sel,list)=>(list||CLS).map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${esc(c.name)}</option>`).join('');
 const stuLine=s=>`<b>${esc(s.name)}</b> <span class="mut">${esc(s.no)} · ${esc(s.className||'')}</span>`;
 
@@ -148,7 +148,8 @@ async function attTotals(cid){const R=rows(await COL('attendance').where('classI
 async function vAtt(){const mine=is('admin')?CLS:CLS.filter(c=>c.classTeacherId===U.uid);
  if(!mine.length)return V('<div class="card">No class is assigned to you as class teacher yet. The administrator sets this in Classes and subjects.</div>');
  const cid=mine.find(c=>c.id===st.ac)?st.ac:mine[0].id,date=st.ad||today();st.ac=cid;st.ad=date;
- V(`<div class="card"><div class="row"><div><label>Class</label><select id="ac">${classOpts(cid,mine)}</select></div><div><label>Date</label><input id="ad" type="date" value="${date}" max="${today()}"></div></div><div id="al"></div></div><div class="card"><h2>Term summary</h2><button class="alt" data-a="atsum">Show attendance for this term</button><div id="as" class="tw"></div></div>`);
+ V(`<div class="card"><div class="row"><div><label>Class</label><select id="ac">${classOpts(cid,mine)}</select></div><div><label>Date</label><input id="ad" type="date" value="${date}" max="${today()}"></div></div><div id="al"></div></div><div class="card"><h2>Term summary</h2><button class="alt" data-a="atsum">Show attendance for this term</button><div id="as" class="tw"></div></div>${is('admin')?'<div class="card"><h2>All classes on this date</h2><div id="ao" class="tw"><span class="mut">Loading…</span></div></div>':''}`);
+ if(is('admin'))aoLoad(date);
  $('ac').onchange=()=>{st.ac=$('ac').value;go('att',true)};$('ad').onchange=()=>{st.ad=$('ad').value;go('att',true)};
  try{const [ss,ex]=await Promise.all([COL('students').where('classId','==',cid).get(),COL('attendance').doc(cid+'_'+date).get()]);
   st.S=rows(ss).filter(s=>s.status==='active').sort(byName);st.mk=ex.exists?{...ex.data().marks}:{};st.S.forEach(s=>{if(!st.mk[s.id])st.mk[s.id]='P'});st.saved=ex.exists;atDraw()}catch(e){$('al').innerHTML='<div class="msg bad">'+esc(why(e))+'</div>'}}
@@ -282,7 +283,8 @@ function vSet(){const c=CFG;setTimeout(()=>{profWire();joinWire()},0);V(`${profi
  <div class="card"><h2>Classes, subjects and teachers</h2><p class="mut">Set these up in <a href="#" data-t="cls">Classes and subjects</a>. Create classes, add subjects, then assign class teachers and subject teachers.</p></div>
  <div class="card"><h2>Users and roles</h2><div id="ut" class="tw"></div></div>
  <div class="card"><h2>Link a parent to children</h2><p class="mut">Parents create their own account. Then open their account here and tick their children.</p><div id="lk"></div></div>
- <div class="card"><h2>Backup</h2><button class="g" data-a="bkdl">Download backup file</button><div id="bkm"></div></div>`);
+ <div class="card"><h2>Backup and restore</h2><h3>1. Download a backup</h3><p class="mut">Keep a copy of all school records in Files, Google Drive or email. Do this at the end of every term.</p><button class="g" data-a="bkdl">Download backup file</button><div id="bkm"></div>
+ <h3 style="margin-top:18px">2. Restore from a backup file</h3><p class="mut">Choose a file made with Download backup file. You will see what is inside before anything is changed.</p><input id="bki" type="file" accept=".json,application/json,text/plain"><div id="bkp"></div><div id="bkm2"></div></div>`);
  sub(COL('users'),sn=>{const U2=rows(sn).sort(byName);$('ut').innerHTML='<table><tr><th>User</th><th>Role</th><th>Active</th></tr>'+U2.map(u=>`<tr><td>${esc(u.name)}<br><span class="mut">${esc(u.username)}</span></td><td><select data-u="${u.id}" data-f="role">${Object.keys(ROLES).filter(r=>r!=='owner'||U.role==='owner').map(r=>`<option value="${r}"${u.role===r?' selected':''}>${ROLES[r]}</option>`).join('')}</select></td><td><input type="checkbox" data-u="${u.id}" data-f="active" ${u.active!==false?'checked':''} style="width:22px;height:22px"></td></tr>`).join('')+'</table>';
   $('ut').querySelectorAll('[data-u]').forEach(el=>{el.onchange=()=>COL('users').doc(el.dataset.u).update({[el.dataset.f]:el.dataset.f==='active'?el.checked:el.value}).catch(x=>alert(why(x)))});
   const P=U2.filter(u=>u.role==='parent');$('lk').innerHTML=P.map(p=>`<div style="border-top:1px solid var(--ln);padding:6px 0"><b>${esc(p.name)}</b> <span class="mut">${esc(p.username)}</span><div class="row" style="margin-top:6px">${STUS.map(s=>`<label class="chk"><input type="checkbox" data-kid="${p.id}" data-sid="${s.id}" ${(p.children||[]).includes(s.id)?'checked':''}> ${esc(s.name)} <span class="mut">${esc(s.className||'')}</span></label>`).join('')}</div></div>`).join('')||'<span class="mut">No parent accounts yet.</span>';
@@ -294,7 +296,80 @@ async function yset(){const o={year:$('y1').value.trim(),term:$('y2').value,term
  const k=o.year.replace('/','-')+'_'+o.term;const terms=[...new Set([...(CFG.terms||[]),k])];try{await COL('config').doc('main').set({...o,terms},{merge:true});say('ym','Saved. The new term is now current.','good')}catch(e){say('ym',why(e),'bad')}}
 async function sscore(){const o={caMax:+$('s1').value||50,exMax:+$('s2').value||50,grades:$('s3').value.trim()};try{await COL('config').doc('main').set(o,{merge:true});say('sm','Saved.','good')}catch(e){say('sm',why(e),'bad')}}
 async function pset(){try{await COL('config').doc('main').set({periods:$('p1').value.trim()},{merge:true});say('pm','Saved.','good')}catch(e){say('pm',why(e),'bad')}}
-async function bkdl(){say('bkm','Preparing…');try{const o={at:new Date().toISOString()};for(const c of ['config','classes','subjects','assignments','timetable','students','attendance','scores','cards','invoices','payments','expenses','feeplans','applications','notices'])o[c]=rows(await COL(c).get());await saveFile('school-backup-'+today()+'.json',JSON.stringify(o));say('bkm','Backup ready.','good')}catch(e){say('bkm',why(e),'bad')}}
+
+/* ---------- restore room: import a backup file ---------- */
+const BK_NAMES={config:'School settings',classes:'Classes',subjects:'Subjects',assignments:'Teacher assignments',timetable:'Timetable',students:'Students',attendance:'Attendance',scores:'Scores',cards:'Report cards',invoices:'Invoices',payments:'Fee payments',expenses:'Expenses',feeplans:'Fee plans',applications:'Applications',notices:'Notices',staffAttendance:'Staff attendance'},BK_BILL=['subUntil','plan','plans','payInfo'];
+let bkData=null;
+function bkRevive(v){if(Array.isArray(v))return v.map(bkRevive);if(v&&typeof v==='object'){const k=Object.keys(v);
+ if(k.length&&k.every(x=>['seconds','nanoseconds','type'].includes(x))&&typeof v.seconds==='number'&&typeof v.nanoseconds==='number')return new firebase.firestore.Timestamp(v.seconds,v.nanoseconds);
+ if(k.length===2&&typeof v._seconds==='number'&&typeof v._nanoseconds==='number')return new firebase.firestore.Timestamp(v._seconds,v._nanoseconds);
+ const o={};k.forEach(x=>o[x]=bkRevive(v[x]));return o}return v}
+async function bkread(){const f=$('bki').files[0];bkData=null;$('bkp').innerHTML='';say('bkm2','');if(!f)return;
+ if(f.size>25e6)return say('bkm2','That file is too large to be a school backup.','bad');
+ try{const o=JSON.parse(await f.text());if(!o||typeof o!=='object'||Array.isArray(o)||!o.at)throw 0;const cols={};
+  Object.keys(BK_NAMES).forEach(c=>{if(Array.isArray(o[c])){const ok=o[c].filter(d=>d&&typeof d.id==='string'&&d.id&&d.id.indexOf('/')<0&&d.id!=='.'&&d.id!=='..');if(ok.length)cols[c]=ok}});
+  if(!Object.keys(cols).length)throw 0;bkData={at:o.at,cols};
+  const when=isNaN(new Date(o.at))?'':new Date(o.at).toLocaleString();
+  $('bkp').innerHTML=`<div class="msg good">Backup file read. It was made on ${esc(when)}.</div><table style="margin-top:8px"><tr><th>Records in the file</th><th>Count</th></tr>${Object.keys(cols).map(c=>`<tr><td>${BK_NAMES[c]}</td><td>${cols[c].length}</td></tr>`).join('')}</table>
+  <h3>How should it be restored?</h3>
+  <label class="chk"><input type="radio" name="bkmode" value="add" checked><span><b>Add missing records only.</b> Safe: nothing already in the system is changed.</span></label>
+  <label class="chk"><input type="radio" name="bkmode" value="over"><span><b>Replace matching records</b> with the backup version. Newer changes to those records are lost.</span></label>
+  ${cols.config?'<label class="chk"><input type="checkbox" id="bkcfg"><span>Also restore school settings (scoring, periods, name). Subscription and payment settings are never changed.</span></label>':''}
+  <label class="chk"><input type="checkbox" id="bkok"><span>I understand this changes the live school data.</span></label><button class="g" data-a="bkrun">Restore now</button>`}
+ catch(e){say('bkm2','That is not a school backup file. Choose a file made with Download backup file.','bad')}}
+async function bkrun(){if(!bkData)return;if(!navigator.onLine)return say('bkm2','Connect to the internet to restore.','bad');
+ if(!$('bkok').checked)return say('bkm2','Tick the box to confirm.','bad');
+ const mode=document.querySelector('input[name=bkmode]:checked').value,withCfg=!!($('bkcfg')&&$('bkcfg').checked);
+ if(!confirm(mode==='over'?'Replace matching records with the backup version? This cannot be undone.':'Add the missing records from the backup?'))return;
+ let total=0,done=0,skipped=0;Object.keys(bkData.cols).forEach(c=>{if(c!=='config'||withCfg)total+=bkData.cols[c].length});
+ try{for(const c of Object.keys(bkData.cols)){let list=bkData.cols[c];if(c==='config'){if(!withCfg)continue;list=list.filter(d=>d.id==='main')}
+   const have=new Set();if(mode==='add'&&c!=='config'){(await COL(c).get()).forEach(d=>have.add(d.id))}
+   for(let i=0;i<list.length;i+=400){const b=db.batch();let n=0;
+    list.slice(i,i+400).forEach(d=>{const {id,...data}=d;if(have.has(id)){skipped++;return}const x=bkRevive(data);if(c==='config')BK_BILL.forEach(k=>delete x[k]);b.set(COL(c).doc(id),x,c==='config'?{merge:true}:{});n++});
+    if(n)await b.commit();done+=n;say('bkm2','Restoring… '+(done+skipped)+' of '+total)}}
+  say('bkm2','Restore finished. '+done+' record'+(done===1?'':'s')+' restored'+(skipped?', '+skipped+' already there and left as they were':'')+'.','good');$('bkp').innerHTML='';$('bki').value='';bkData=null}
+ catch(e){say('bkm2','Stopped after '+done+' records. '+why(e),'bad')}}
+
+/* ---------- all classes overview (head) and staff attendance ---------- */
+async function aoLoad(date){try{const A={};rows(await COL('attendance').where('date','==',date).get()).forEach(a=>A[a.classId]=a);const el=$('ao');if(!el)return;
+ el.innerHTML='<table><tr><th>Class</th><th>Class teacher</th><th>Register</th><th>Present</th></tr>'+CLS.map(c=>{const a=A[c.id],m=a?Object.values(a.marks||{}):[],p=m.filter(x=>x==='P'||x==='L').length;return `<tr><td><button class="s alt" data-a="atgo" data-c="${c.id}">${esc(c.name)}</button></td><td>${esc(c.classTeacherName||'-')}</td><td>${a?'<span class="tag ok">Marked</span>':'<span class="tag warn">Not marked</span>'}</td><td>${a?p+' of '+m.length:'-'}</td></tr>`}).join('')+'</table>'}
+ catch(e){if($('ao'))$('ao').innerHTML='<div class="msg bad">'+esc(why(e))+'</div>'}}
+const STAFF_ROLES=['admin','teacher','accountant'],AST={P:'Present',A:'Absent',L:'Late',E:'Excused'},astCls=s=>s==='P'?'ok':s==='L'||s==='E'?'warn':'bad';
+const nowHM=()=>{const d=new Date();return String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0')};
+function myAttHtml(){if(!U||!STAFF_ROLES.includes(U.role))return '';return `<div class="card" id="mya"><h2>My attendance</h2><div id="myas" class="mut">Loading…</div><button class="g" id="myab" data-a="mycheck" style="display:none">I am here: check in</button><div id="myam"></div><div id="myah" class="tw" style="margin-top:8px"></div></div>`}
+function myAttWire(){const el=$('mya');if(!el||el.dataset.w)return;el.dataset.w='1';
+ setTimeout(()=>{if($('myas')&&$('myas').textContent==='Loading…')$('myas').textContent='Staff attendance is not available yet. Ask the head to publish the staff attendance rules.'},7000);
+ sub(COL('staffAttendance').where('uid','==',U.uid),sn=>{if(!$('myas'))return;const A=rows(sn).sort((a,b)=>b.date.localeCompare(a.date)),t=A.find(a=>a.date===today());
+  $('myas').innerHTML=t?`Today: <span class="tag ${astCls(t.status)}">${AST[t.status]}</span>${t.timeIn?' at '+esc(t.timeIn):''}`:'You have not checked in today.';$('myab').style.display=t?'none':'block';
+  $('myah').innerHTML=A.length?'<table><tr><th>Date</th><th>Status</th><th>Time</th></tr>'+A.slice(0,10).map(a=>`<tr><td>${fd(a.date)}</td><td><span class="tag ${astCls(a.status)}">${AST[a.status]}</span></td><td>${esc(a.timeIn||'-')}</td></tr>`).join('')+'</table>':''})}
+new MutationObserver(()=>{if(U&&$('mya')&&!$('mya').dataset.w)myAttWire()}).observe(document.body,{childList:true,subtree:true});
+async function mycheck(){const d=today(),ref=COL('staffAttendance').doc(d+'_'+U.uid),tm=nowHM(),late=tm>(CFG.staffStart||'08:00');
+ try{const ex=await ref.get();if(ex.exists)return say('myam','Already recorded for today.');
+  await wr(ref.set({date:d,uid:U.uid,name:U.name,role:U.role,status:late?'L':'P',timeIn:tm,note:'',self:true,by:U.name,at:TS()}));say('myam',late?'Checked in at '+tm+'. Marked late.':'Checked in at '+tm+'. Thank you.','good')}
+ catch(e){say('myam',why(e),'bad')}}
+async function vSta(){if(!is('admin'))return V('<div class="card">Only the head can see attendance for all staff.</div>');
+ const date=st.sdt||today();st.sdt=date;
+ V(`${myAttHtml()}<div class="card"><h2>Staff attendance</h2><div class="row"><div><label>Date</label><input id="sdt" type="date" value="${date}" max="${today()}"></div><div><label>Arrival time (after this is late)</label><input id="sst" type="time" value="${esc(CFG.staffStart||'08:00')}"></div><button class="alt" data-a="ssst">Save time</button></div><p class="mut">Staff can check themselves in from My profile. You can also mark or correct anyone below.</p><div id="stm"></div><div id="stl" class="tw"><span class="mut">Loading…</span></div></div><div class="card"><h2>Term summary</h2><button class="alt" data-a="stsum">Show staff attendance for this term</button><div id="sts" class="tw"></div></div>`);
+ $('sdt').onchange=()=>{st.sdt=$('sdt').value;go('sta',true)};
+ try{const [us,as]=await Promise.all([COL('users').get(),COL('staffAttendance').where('date','==',date).get()]);st.stf=rows(us).filter(u=>STAFF_ROLES.includes(u.role)&&u.active!==false).sort(byName);st.stA={};rows(as).forEach(a=>st.stA[a.uid]=a);stDraw()}
+ catch(e){if($('stl'))$('stl').innerHTML='<div class="msg bad">'+esc(why(e))+'</div>'}}
+function stDraw(){const S=st.stf||[];if(!$('stl'))return;$('stl').innerHTML=S.length?`<table><tr><th>Staff</th><th>Status</th><th>Time</th></tr>${S.map(u=>{const a=st.stA[u.id]||{};return `<tr><td><b>${esc(u.name)}</b><br><span class="mut">${esc(ROLES[u.role])}${a.self?' · checked in by self':''}</span></td><td><select data-sa="${u.id}"><option value="">Not marked</option>${Object.keys(AST).map(k=>`<option value="${k}"${a.status===k?' selected':''}>${AST[k]}</option>`).join('')}</select></td><td><input type="time" data-st="${u.id}" value="${esc(a.timeIn||'')}" style="width:112px"></td></tr>`}).join('')}</table><div class="row" style="margin-top:8px"><button class="alt" data-a="stall">Mark everyone present</button><button class="g" data-a="stsave">Save staff register</button></div>`:'<span class="mut">No staff accounts yet.</span>'}
+function stall(){document.querySelectorAll('select[data-sa]').forEach(s=>{if(!s.value)s.value='P'})}
+async function stsave(){const date=st.sdt,b=db.batch();let n=0;
+ (st.stf||[]).forEach(u=>{const v=document.querySelector('select[data-sa="'+u.id+'"]').value,tm=document.querySelector('input[data-st="'+u.id+'"]').value,ref=COL('staffAttendance').doc(date+'_'+u.id),old=st.stA[u.id];
+  if(!v){if(old){b.delete(ref);n++}return}
+  if(old&&old.status===v&&(old.timeIn||'')===tm)return;
+  b.set(ref,{date,uid:u.id,name:u.name,role:u.role,status:v,timeIn:tm,note:'',self:false,by:U.name,at:TS()});n++});
+ if(!n)return say('stm','Nothing has changed.');
+ try{await wr(b.commit());say('stm','Staff register saved for '+fd(date)+'.','good');const as=await COL('staffAttendance').where('date','==',date).get();st.stA={};rows(as).forEach(a=>st.stA[a.uid]=a);stDraw()}catch(e){say('stm',why(e),'bad')}}
+async function ssst(){const v=$('sst').value;if(!v)return say('stm','Pick a time.','bad');try{await COL('config').doc('main').set({staffStart:v},{merge:true});say('stm','Saved. Staff arriving after '+v+' are marked late.','good')}catch(e){say('stm',why(e),'bad')}}
+function stRows(){const T=st.stT||{};return (st.stf||[]).map(u=>{const o=T[u.id]||{P:0,A:0,L:0,E:0,days:0};return {u,o,rate:o.days?Math.round((o.P+o.L)*100/o.days):0}})}
+async function stsum(){try{let q=COL('staffAttendance');if(CFG.termStart)q=q.where('date','>=',CFG.termStart);if(CFG.termEnd)q=q.where('date','<=',CFG.termEnd);
+ const T={};rows(await q.get()).forEach(a=>{const o=T[a.uid]||(T[a.uid]={P:0,A:0,L:0,E:0,days:0});if(o[a.status]!==undefined){o[a.status]++;o.days++}});st.stT=T;
+ $('sts').innerHTML='<table><tr><th>Staff</th><th>Days</th><th>Present</th><th>Absent</th><th>Late</th><th>Excused</th><th>Rate</th></tr>'+stRows().map(r=>`<tr><td>${esc(r.u.name)}<br><span class="mut">${esc(ROLES[r.u.role])}</span></td><td>${r.o.days}</td><td>${r.o.P}</td><td>${r.o.A}</td><td>${r.o.L}</td><td>${r.o.E}</td><td>${r.o.days?r.rate+'%':'-'}</td></tr>`).join('')+'</table><button class="alt" data-a="stprint">Print</button>'}
+ catch(e){$('sts').innerHTML='<div class="msg bad">'+esc(why(e))+'</div>'}}
+function stprint(){printIt(`<div class="rcard"><h1>${esc(CFG.name)}</h1><div class="c">Staff attendance · ${esc(termName(tk()))}${CFG.termStart?' · '+fd(CFG.termStart)+' to '+fd(CFG.termEnd):''}</div><br><table><tr><th>#</th><th>Staff</th><th>Role</th><th>Days</th><th>Present</th><th>Absent</th><th>Late</th><th>Excused</th><th>Rate</th></tr>${stRows().map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.u.name)}</td><td>${esc(ROLES[r.u.role])}</td><td>${r.o.days}</td><td>${r.o.P}</td><td>${r.o.A}</td><td>${r.o.L}</td><td>${r.o.E}</td><td>${r.o.days?r.rate+'%':'-'}</td></tr>`).join('')}</table></div>`)}
+async function bkdl(){say('bkm','Preparing…');try{const o={at:new Date().toISOString()};try{o.staffAttendance=rows(await COL('staffAttendance').get())}catch(e){}for(const c of ['config','classes','subjects','assignments','timetable','students','attendance','scores','cards','invoices','payments','expenses','feeplans','applications','notices'])o[c]=rows(await COL(c).get());await saveFile('school-backup-'+today()+'.json',JSON.stringify(o));say('bkm','Backup ready.','good')}catch(e){say('bkm',why(e),'bad')}}
 
 /* ---------- classes actions ---------- */
 async function csave(){const n=$('c1').value.trim(),lv=$('c2').value,tc=$('c3').value,sj=[...document.querySelectorAll('[data-sj]')].filter(x=>x.checked).map(x=>x.dataset.sj);if(!n)return err('Enter the class name.');
@@ -331,7 +406,7 @@ const A={
  scsave:scsave,sclock:sclock,scprint:scprint,
  rcomp:rcomp,rcsave:rcsave,rcpub:d=>rcpub(d.v),rcall:()=>rcprintAll(st.cards.map(c=>c)),rcprint:d=>rcprintOne(d.id),
  fplan:fplan,fitem:fitem,fbill:fbill,fsearch:fsearch,fpick:d=>fpick(d.id),fpay:fpay,flvl:d=>{st.fl=d.l;vFee()},iprint:async d=>{const i=st.inv.find(x=>x.id===d.id)||{id:d.id,...(await COL('invoices').doc(d.id).get()).data()};printIt(invHtml(i))},
- xadd:xadd,npost:npost,kset:kset,yset:yset,sscore:sscore,pset:pset,bkdl:bkdl
+ xadd:xadd,npost:npost,kset:kset,yset:yset,sscore:sscore,pset:pset,bkdl:bkdl,bkrun:bkrun,mycheck:mycheck,stsave:stsave,stall:stall,stsum:stsum,ssst:ssst,stprint:stprint,atgo:d=>{st.ac=d.c;go('att',true)}
 };
 
 /* ---------- print and save (works on iPhone and Android) ---------- */
@@ -504,14 +579,15 @@ async function rcmail(id){busy('Preparing the PDF. Please wait…');try{const {b
 
 
 /* ---------- my profile (every user), school code and logo (head) ---------- */
-function profileCardHtml(){const adm=is('admin');
+function profileCardHtml(){return profileCardHtml0()+myAttHtml()}
+function profileCardHtml0(){const adm=is('admin');
  return `<div class="card"><h2>My profile</h2><div class="row"><div style="text-align:center"><img src="${esc(U.photo||'')}" alt="" style="width:96px;height:96px;border-radius:50%;object-fit:cover;background:#e6eee9;${U.photo?'':'display:none;'}"><div class="mut">${U.photo?'Your photo':'No photo yet'}</div></div><div><div><b>${esc(U.name)}</b></div><div class="mut">${esc(ROLES[U.role]||'')}</div><label>Upload your photo</label><input id="ph1" type="file" accept="image/*"></div></div><div id="phm"></div><button class="alt" data-a="idme">Print my ID card</button></div>
  ${adm?`<div class="card"><h2>School</h2><div class="row"><div><div class="mut">School code (used for student numbers and payment references)</div><div class="big">${esc(CFG.code||'Not set')}</div><div class="mut">You can change it under Setup.</div></div><div><div class="mut">Staff join code (give this to staff)</div><div class="big" style="letter-spacing:3px">${esc(CFG.joinCode||'Not set')}</div>${CFG.joinCode?'':'<button class="alt" data-a="newjoin">Make a join code</button>'}</div></div>
  <h3>School logo</h3><div class="row"><div style="text-align:center">${CFG.logo?'<img src="'+esc(CFG.logo)+'" alt="" style="max-height:80px">':'<span class="mut">No logo yet</span>'}</div><div><label>Upload the school logo</label><input id="lg1" type="file" accept="image/*"></div></div><div id="lgm"></div></div>`:''}`}
 function vMe(){V(`${profileCardHtml()}<div class="card"><h2>Your role</h2><div>${esc(ROLES[U.role]||'')}</div><div class="mut" style="margin-top:6px">The head or administrator sets your role. Tell them if it is wrong.</div></div>`)}
 async function myPhoto(){const f=$('ph1').files[0];if(!f)return;try{const d=await compressImg(f,220);await COL('users').doc(U.uid).update({photo:d});U.photo=d;go(tab,true);say('phm','Photo saved.','good')}catch(e){say('phm',e.message||why(e),'bad')}}
 async function dashLogo(){const f=$('lg1').files[0];if(!f)return;try{const d=await compressImg(f,360);await COL('config').doc('main').set({logo:d},{merge:true});$('hlogo').src=d;say('lgm','Logo saved. It now shows in the header and on report cards.','good')}catch(e){say('lgm',e.message||why(e),'bad')}}
-document.addEventListener('change',e=>{if(e.target.id==='ph1')myPhoto();if(e.target.id==='lg1')dashLogo()});
+document.addEventListener('change',e=>{if(e.target.id==='bki')bkread();if(e.target.id==='ph1')myPhoto();if(e.target.id==='lg1')dashLogo()});
 
 
 /* ---------- student photos and ID cards (printable) ---------- */
