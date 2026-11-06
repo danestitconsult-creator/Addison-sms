@@ -120,3 +120,31 @@ dashboard for all schools is a separate build.
 - [ ] Head: the Dashboard shows the school code (used in student numbers and payment references), the staff join code,
       and the school logo upload. If no join code is shown, press "Make a join code".
 - [ ] Publish the new firestore.rules. It lets each person change only their own photo.
+
+## N. Photos and ID cards (new)
+
+- [ ] Admissions: take the student's photo with the phone camera, or upload one. It is saved with the application and copied to the student record.
+- [ ] Student record: "Replace the photo" changes it later. "Print ID card" prints one card.
+- [ ] Head: ID cards tab. Print all cards for a class, or print all staff cards. Print at 100% scale on A4 (8 cards fit a sheet).
+- [ ] Staff: My profile > "Print my ID card" prints your own card. Upload your photo first.
+- [ ] Student staff numbers are generated from the account (STF-XXXXXX). Student numbers come from admission.
+- [ ] Check one printed card for size: it should be 86 × 54 mm, the size of a bank card.
+
+## O. Owner console (all schools in one place)
+Upload owner.html next to index.html, then open it at the same address with owner.html on the end.
+1. In EVERY school, create your owner account with the SAME username and password, and set role to owner in that school's users document.
+2. Log in to the console once. All schools load together. A school that cannot connect shows the reason and a Try again button.
+3. Add a new school by pasting its Firebase config. The list is stored on that device only: use "Back up or move your list" to keep a copy.
+4. Test: a head reports a payment, it appears under "Payments waiting for you", Confirm extends that school's end date.
+5. The console reads and writes the same documents as each school's own Billing page, so the Firestore rules you already published must allow the owner role. If a school shows "refused the request", fix that school's rules.
+
+## P. iPhone checks (Safari and Add to Home Screen)
+1. Tapping a text box must NOT zoom the page.
+2. Rotate the phone sideways: nothing is hidden behind the notch or the home bar.
+3. Report card PDF: after the "Preparing" bar, a sheet appears. Share or save puts the PDF in Files, Mail or WhatsApp.
+4. Print an ID card or receipt: the iPhone print sheet opens and shows the right page.
+5. Photo upload: iPhone offers Take Photo, Photo Library and Choose File.
+6. Mark attendance with Airplane mode on: it says "Saved on this device" and syncs when you turn it off.
+7. Leave the app in the background for an hour, open it again: data loads without logging in again.
+8. After you upload a new version, open the app: a green bar says "A new version is ready. Tap here to refresh."
+9. A home-screen app keeps its own login. Log in again after adding it to the Home Screen.

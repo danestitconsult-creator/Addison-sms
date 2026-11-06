@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Owner console</title><meta name="theme-color" content="#14532d"><meta name="robots" content="noindex">
+<meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Owner">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+:root{color-scheme:light;--b:#0b7a43;--ln:#d8dde2}*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;font:14px/1.4 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;background:#eef3ef;color:#14181c}
+header{background:#14532d;color:#fff;padding:calc(10px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) 10px calc(16px + env(safe-area-inset-left,0px));display:flex;justify-content:space-between;gap:10px;align-items:center}
+main{max-width:1000px;margin:0 auto;padding:12px calc(12px + env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) calc(12px + env(safe-area-inset-left,0px))}
+.card{background:#fff;border:1px solid var(--ln);border-radius:10px;padding:12px;margin-bottom:12px}
+h2{margin:0 0 8px;font-size:16px}label{display:block;font-size:12px;color:#555;margin:8px 0 3px}
+input,select,textarea,button{font:inherit;font-size:16px;width:100%;padding:9px 10px;border-radius:8px;border:1px solid #b8c0c8;background:#fff;color:#14181c;min-height:40px;touch-action:manipulation}
+input[type=date]{-webkit-appearance:none;appearance:none;display:block}
+textarea{min-height:90px;font-size:14px}
+button{background:#14181c;color:#fff;border:0;font-weight:600;cursor:pointer;margin-top:8px}
+button.g{background:var(--b)}button.r{background:#b3261e}button.alt{background:#e6eee9;color:#14181c}
+button.s{width:auto;padding:6px 12px;margin:0;min-height:36px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}.row>button{margin-top:0;align-self:end}
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:12px}
+.tile{background:#fff;border:1px solid var(--ln);border-radius:10px;padding:10px}.tile .big{font-size:24px;font-weight:800}
+.mut{color:#666;font-size:12px}.tag{padding:2px 10px;border-radius:99px;font-size:12px;font-weight:600;background:#e6eee9;white-space:nowrap}
+.bad{background:#fde3e0;color:#7a1b13}.warn{background:#fff3d6;color:#5a4300}.ok{background:#dff3e6;color:#12532d}.inf{background:#dbe9f8;color:#0b3a63}
+.msg{padding:9px;border-radius:8px;margin-top:8px;background:#fff3d6;color:#5a4300}.msg.bad{background:#fde3e0;color:#7a1b13}.msg.good{background:#dff3e6;color:#12532d}
+.top{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}.acts a{text-decoration:none}
+table{width:100%;border-collapse:collapse}td,th{padding:6px 4px;border-bottom:1px solid var(--ln);text-align:left;vertical-align:top}th{font-size:12px;color:#555}
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}.hide{display:none}
+#md{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:flex-start;justify-content:center;overflow:auto;padding:calc(16px + env(safe-area-inset-top,0px)) 12px 24px;z-index:20}
+#md.on{display:flex}#md .box{background:#fff;border-radius:12px;padding:14px;width:100%;max-width:560px}
+details summary{cursor:pointer;padding:6px 0}
+</style></head><body>
+<header><div><b>Owner console</b><div class="mut" style="color:#bfe3cf" id="who">All your schools in one place</div></div><div style="display:flex;gap:8px"><button class="s alt hide" id="rf" data-a="refresh">Refresh</button><button class="s alt hide" id="lo" data-a="logout">Log out</button></div></header>
+<main><div id="app"></div></main><div id="md"><div class="box" id="mb"></div></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script>
+const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const KEY='smsOwnerConsole',UKEY='smsOwnerConsoleUser';
+const PLAN_DEF={monthly:{amt:150,m:1,label:'Monthly'},termly:{amt:400,m:3,label:'Per term (3 months)'},annual:{amt:1400,m:12,label:'Annual'}};
+const SEED=[{id:'addison-sms',name:'Addison SMS',url:'https://danestitconsult-creator.github.io/Addison-sms/',cfg:{apiKey:'AIzaSyCmMHVOPLAUBWlbGgerJtGZbmwkw5fC03U',authDomain:'addison-sms.firebaseapp.com',projectId:'addison-sms',storageBucket:'addison-sms.firebasestorage.app',messagingSenderId:'1083060195739',appId:'1:1083060195739:web:79b65d4b629b26d91e513e'}}];
+const ls={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+let schools=(()=>{try{const a=JSON.parse(ls.get(KEY));return Array.isArray(a)&&a.length?a:SEED}catch(e){return SEED}})();
+const saveList=()=>ls.set(KEY,JSON.stringify(schools));
+let cred=null,R={};
+const TS=()=>firebase.firestore.FieldValue.serverTimestamp(),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+const mail=async u=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u.trim().toLowerCase()));return [...new Uint8Array(b)].slice(0,16).map(x=>x.toString(16).padStart(2,'0')).join('')+'@sms.local'};
+const dateOf=t=>t&&t.toDate?t.toDate():(t?new Date(t):null),ymd=d=>d?new Date(d).toISOString().slice(0,10):'';
+const fd=t=>t?new Date(t+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}):'-';
+const money=(x,c)=>(c||'GHS')+' '+Number(x||0).toFixed(2),addMo=(b,m)=>{const t=new Date(b);t.setMonth(t.getMonth()+(m||1));return t};
+const plansOf=r=>(r&&r.cfg&&r.cfg.plans)||PLAN_DEF,sch=id=>schools.find(s=>s.id===id);
+
+/* ---------- connecting to each school ---------- */
+function appFor(s){const n='s_'+s.id;let a=firebase.apps.find(x=>x.name===n);if(!a){a=firebase.initializeApp(s.cfg,n);try{a.firestore().settings({experimentalAutoDetectLongPolling:true,merge:true})}catch(e){}}return a}
+function friendly(e){const c=e&&e.code||'';
+ if(/invalid-credential|user-not-found|wrong-password|invalid-login/.test(c))return 'Wrong username or password for this school, or you have no owner account there yet.';
+ if(c==='auth/network-request-failed'||c==='unavailable')return 'No internet connection.';
+ if(c==='permission-denied')return 'This school refused the request. Check that the rules are published and that your account there has the owner role.';
+ if(/api-key/.test(c))return 'The API key for this school is wrong. Check the letter O against the number 0.';
+ if(c==='auth/too-many-requests')return 'Too many attempts. Wait a few minutes and try again.';
+ return c||(e&&e.message)||'Something went wrong.'}
+async function load1(s){const r=R[s.id]={st:'loading'};draw();
+ try{const a=appFor(s),au=a.auth(),db=a.firestore();
+  if(!a._ps){await au.setPersistence(firebase.auth.Auth.Persistence.SESSION).catch(()=>{});a._ps=1}
+  if(!au.currentUser)await au.signInWithEmailAndPassword(await mail(cred.u),cred.p+'#sms-2026');
+  const us=await db.collection('users').doc(au.currentUser.uid).get();
+  if(!us.exists||us.data().role!=='owner'){r.st='err';r.err='You are signed in, but your account in this school is not the owner. In that school\'s Firestore, open users, find your document and set role to owner.';return}
+  r.owner=us.data().name;
+  const [c,p,n]=await Promise.all([db.collection('config').doc('main').get(),db.collection('subPayments').get(),db.collection('paymentNotices').where('status','==','pending').get()]);
+  r.cfg=c.exists?c.data():{};r.pay=p.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>(y.at?.seconds||0)-(x.at?.seconds||0));r.notices=n.docs.map(d=>({id:d.id,...d.data()})).sort((x,y)=>(y.at?.seconds||0)-(x.at?.seconds||0));r.st='ok'}
+ catch(e){r.st='err';r.err=friendly(e)}
+ draw()}
+const refreshAll=()=>Promise.all(schools.map(load1));
+
+/* ---------- status ---------- */
+function info(r){const end=dateOf(r.cfg&&r.cfg.subUntil),days=end?Math.ceil((end-Date.now())/864e5):null;let k,l,o;
+ if(!end){k='warn';l='Not started';o=2}else if(days<0){k='bad';l='Ended';o=0}else if(days<=14){k='warn';l='Renew soon';o=1}else{k='ok';l='Active';o=3}return{end,days,k,l,o}}
+
+/* ---------- drawing ---------- */
+function draw(){const app=$('app');$('rf').classList.toggle('hide',!cred);$('lo').classList.toggle('hide',!cred);
+ if(!cred){app.innerHTML=`<div class="card" style="max-width:420px;margin:30px auto"><h2>Log in as platform owner</h2><p class="mut">Use the username and password of your owner account. The same details are used to sign in to every school, so create your owner account with the same username and password in each school. Your password is not saved.</p><label>Username</label><input id="lu" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username" value="${esc(ls.get(UKEY)||'')}"><label>Password</label><input id="lp" type="password" autocomplete="current-password"><button class="g" data-a="login">Log in to all schools</button><div id="lm"></div></div>`;return}
+ const L=schools.map(s=>({s,r:R[s.id]||{st:'loading'}})),ok=L.filter(x=>x.r.st==='ok'),cur=(ok[0]&&ok[0].r.cfg.cur)||'GHS',now=new Date();
+ const cnt=k=>ok.filter(x=>info(x.r).l===k).length,pend=ok.reduce((t,x)=>t+x.r.notices.length,0);
+ const mon=ok.reduce((t,x)=>t+x.r.pay.filter(p=>{const d=dateOf(p.at);return d&&d.getMonth()===now.getMonth()&&d.getFullYear()===now.getFullYear()}).reduce((u,p)=>u+(+p.amount||0),0),0);
+ const tot=ok.reduce((t,x)=>t+x.r.pay.reduce((u,p)=>u+(+p.amount||0),0),0);
+ const tile=(n,l,c)=>`<div class="tile"><div class="mut">${l}</div><div class="big ${c?'':''}">${n}</div></div>`;
+ const pn=[];ok.forEach(x=>x.r.notices.forEach(n=>pn.push({s:x.s,r:x.r,n})));
+ app.innerHTML=`<div class="tiles">${tile(schools.length,'Schools')}${tile(cnt('Active'),'Active')}${tile(cnt('Renew soon'),'Renew soon')}${tile(cnt('Ended')+cnt('Not started'),'Ended or not started')}${tile(pend,'Payments to check')}${tile(money(mon,cur),'Received this month')}${tile(money(tot,cur),'Received in total')}</div>
+ <div class="card"><h2>Payments waiting for you${pend?' ('+pend+')':''}</h2>${pn.length?`<p class="mut">Check that the money arrived on your MoMo or bank, then press Confirm.</p><div class="tw"><table><tr><th>School</th><th>Amount</th><th>Paid</th><th>Reference</th><th></th></tr>${pn.map(x=>`<tr><td><b>${esc(x.s.name)}</b></td><td>${money(x.n.amount,x.r.cfg.cur)}<br><span class="mut">${esc(x.n.plan)}</span></td><td>${esc(x.n.paidOn||'')}<br><span class="mut">${esc(x.n.method)}</span></td><td>${esc(x.n.ref)}</td><td><button class="s g" data-a="nconf" data-s="${x.s.id}" data-n="${x.n.id}">Confirm</button> <button class="s r" data-a="nrej" data-s="${x.s.id}" data-n="${x.n.id}">Reject</button></td></tr>`).join('')}</table></div>`:'<span class="mut">Nothing waiting. All reports are dealt with.</span>'}</div>
+ <h2 style="margin:4px 2px 8px">Your schools</h2>
+ ${L.slice().sort((a,b)=>(a.r.st==='ok'?info(a.r).o:-1)-(b.r.st==='ok'?info(b.r).o:-1)).map(x=>schoolCard(x.s,x.r)).join('')}
+ <div class="card"><h2>Add a school</h2><p class="mut">Each school has its own Firebase project. Open it in the Firebase console, go to Project settings, Your apps, and copy the config (the part inside <code>firebase.initializeApp({ ... })</code>). Paste it below.</p><div class="row"><div><label>School name</label><input id="an"></div><div><label>App link (optional)</label><input id="au" placeholder="https://" inputmode="url" autocapitalize="none"></div></div><label>Firebase config</label><textarea id="ac" placeholder='apiKey: "...", authDomain: "...", projectId: "...", ...' autocapitalize="none" autocorrect="off" spellcheck="false"></textarea><button class="g" data-a="addschool">Add school</button><div id="am"></div></div>
+ <div class="card"><details><summary><b>Back up or move your list of schools</b></summary><p class="mut">The list is saved on this device only. Copy it somewhere safe so you can restore it on a new phone. It holds no passwords.</p><textarea id="bk" readonly>${esc(JSON.stringify(schools))}</textarea><div class="row"><button class="alt" data-a="copybk">Copy</button></div><label>Paste a copy here to restore</label><textarea id="bi"></textarea><button class="alt" data-a="importbk">Restore list</button><div id="bm"></div></details></div>`}
+function schoolCard(s,r){const head=`<div class="top"><div><b style="font-size:16px">${esc(s.name)}</b>${r.cfg&&r.cfg.code?' <span class="mut">'+esc(r.cfg.code)+'</span>':''}</div>`;
+ const open=s.url?`<a href="${esc(s.url)}" target="_blank" rel="noopener"><button class="s alt">Open app</button></a>`:'';
+ if(r.st==='loading')return `<div class="card">${head}<span class="tag inf">Loading…</span></div></div>`;
+ if(r.st==='err')return `<div class="card">${head}<span class="tag bad">Cannot connect</span></div><div class="msg bad">${esc(r.err)}</div><div class="acts"><button class="s g" data-a="retry" data-s="${s.id}">Try again</button>${open}<button class="s r" data-a="rmschool" data-s="${s.id}">Remove from list</button></div></div>`;
+ const i=info(r),P=plansOf(r),last=r.pay[0];
+ return `<div class="card">${head}<span class="tag ${i.k}">${i.l}</span></div>
+ <div class="row" style="margin-top:8px"><div><div class="mut">Valid until</div><b>${i.end?fd(ymd(i.end)):'-'}</b><div class="mut">${i.days==null?'free open access':i.days>=0?i.days+' days left':'ended '+(-i.days)+' days ago'}</div></div><div><div class="mut">Plan</div><b>${esc((P[r.cfg.plan]||{}).label||'-')}</b></div><div><div class="mut">Last payment</div><b>${last?money(last.amount,r.cfg.cur):'-'}</b><div class="mut">${last?fd(ymd(dateOf(last.at))):'none yet'}</div></div></div>
+ ${r.notices.length?`<div class="msg" style="margin-top:8px">${r.notices.length} payment report${r.notices.length>1?'s':''} waiting above.</div>`:''}
+ <div class="acts"><button class="s g" data-a="payform" data-s="${s.id}">Record payment</button><button class="s alt" data-a="details" data-s="${s.id}">Details</button>${open}</div></div>`}
+
+/* ---------- popups ---------- */
+const modal=h=>{$('mb').innerHTML=h;$('md').classList.add('on')},closeM=()=>$('md').classList.remove('on');
+const mmsg=(t,c)=>{const e=$('mx');if(e)e.innerHTML=t?`<div class="msg ${c||''}">${t}</div>`:''};
+function payForm(id){const s=sch(id),r=R[id],P=plansOf(r);
+ modal(`<h2>Record a payment: ${esc(s.name)}</h2><div class="row"><div><label>Plan</label><select id="mp">${Object.keys(P).map(k=>`<option value="${k}">${P[k].label} - ${money(P[k].amt,r.cfg.cur)}</option>`).join('')}</select></div><div><label>Amount received</label><input id="ma" type="number" inputmode="decimal" step="0.01"></div><div><label>Method</label><select id="mm"><option value="momo">Mobile money</option><option value="bank">Bank transfer</option><option value="cash">Cash</option></select></div><div><label>Transaction reference</label><input id="mr"></div></div><div class="msg good" id="mv"></div><button class="g" data-a="dopay" data-s="${id}">Record and extend</button><button class="alt" data-a="close">Cancel</button><div id="mx"></div>`);
+ const pv=()=>{const p=P[$('mp').value],cur=dateOf(r.cfg.subUntil),live=cur&&cur>new Date();$('mv').innerHTML='Valid until <b>'+fd(ymd(addMo(live?cur:new Date(),p.m)))+'</b> after this'+(live?' (added to the current end date).':' (counted from today).')};
+ $('mp').onchange=()=>{$('ma').value=P[$('mp').value].amt;pv()};$('ma').value=P[Object.keys(P)[0]].amt;pv()}
+async function applyPay(s,r,key,amt,mt,ref,extra){const db=appFor(s).firestore(),P=plansOf(r)[key]||PLAN_DEF.monthly,cur=dateOf(r.cfg.subUntil),base=cur&&cur>new Date()?new Date(cur):new Date(),to=addMo(base,P.m),b=db.batch(),sid=uid();
+ b.set(db.collection('config').doc('main'),{subUntil:to,plan:key},{merge:true});
+ b.set(db.collection('subPayments').doc(sid),{amount:amt,plan:key,planLabel:P.label,months:P.m,method:mt,ref:ref,fromDate:base,toDate:to,at:TS(),by:r.owner,...(extra||{})});
+ return{b,sid,to}}
+async function doPay(id){const s=sch(id),r=R[id],key=$('mp').value,amt=Math.round(+$('ma').value*100)/100,ref=$('mr').value.trim(),mt=$('mm').value;
+ if(!(amt>0))return mmsg('Enter the amount received.','bad');if(!ref)return mmsg('Enter the transaction reference.','bad');
+ if(r.pay.some(p=>p.ref===ref)&&!confirm('This reference was already recorded for this school. Record it anyway?'))return;
+ mmsg('Saving…');try{const x=await applyPay(s,r,key,amt,mt,ref);await x.b.commit();closeM();await load1(s)}catch(e){mmsg(friendly(e),'bad')}}
+async function nconf(sid,nid){const s=sch(sid),r=R[sid],n=r.notices.find(x=>x.id===nid);if(!n)return;
+ if(!confirm('Confirm you received '+money(n.amount,r.cfg.cur)+' from '+s.name+' ('+n.method+', ref '+n.ref+')? Their subscription will be extended.'))return;
+ try{const x=await applyPay(s,r,n.plan,n.amount,n.method,n.ref,{noticeId:nid}),db=appFor(s).firestore();x.b.update(db.collection('paymentNotices').doc(nid),{status:'confirmed',reviewedAt:TS(),subPaymentId:x.sid});await x.b.commit();await load1(s)}catch(e){alert(friendly(e))}}
+async function nrej(sid,nid){const s=sch(sid),reason=prompt('Reason for rejecting (the head will see it):','No matching payment found');if(reason===null)return;
+ try{await appFor(s).firestore().collection('paymentNotices').doc(nid).update({status:'rejected',reason:reason,reviewedAt:TS()});await load1(s)}catch(e){alert(friendly(e))}}
+function details(id){const s=sch(id),r=R[id],i=info(r);
+ modal(`<h2>${esc(s.name)}</h2><div class="top"><span class="tag ${i.k}">${i.l}</span><span class="mut">${i.end?'valid until '+fd(ymd(i.end)):'free open access'}</span></div>
+ <h3 style="margin:14px 0 4px;font-size:14px">Payment history</h3><div class="tw">${r.pay.length?`<table><tr><th>Paid</th><th>Plan</th><th>Amount</th><th>Reference</th><th>Valid to</th></tr>${r.pay.map(p=>`<tr><td>${fd(ymd(dateOf(p.at)))}</td><td>${esc(p.planLabel)}<div class="mut">${esc(p.method)}</div></td><td>${money(p.amount,r.cfg.cur)}</td><td>${esc(p.ref)}</td><td>${fd(ymd(dateOf(p.toDate)))}</td></tr>`).join('')}</table>`:'<span class="mut">No payments yet.</span>'}</div>
+ <h3 style="margin:14px 0 4px;font-size:14px">Fix the end date, or suspend</h3><div class="row"><div><label>Valid until</label><input id="md1" type="date" value="${i.end?ymd(i.end):''}"></div><button class="alt" data-a="setend" data-s="${id}">Set end date</button><button class="r" data-a="suspend" data-s="${id}">Suspend now</button></div><div id="mx"></div>
+ <button class="alt" data-a="close" style="margin-top:14px">Close</button><button class="r" data-a="rmschool" data-s="${id}">Remove from my list</button>`)}
+async function setEnd(id,date,msg){const s=sch(id);try{await appFor(s).firestore().collection('config').doc('main').set({subUntil:date},{merge:true});closeM();await load1(s)}catch(e){mmsg(friendly(e),'bad')}}
+
+const A={
+ login:async()=>{const u=$('lu').value.trim(),p=$('lp').value;if(!u||!p)return $('lm').innerHTML='<div class="msg bad">Enter your username and password.</div>';ls.set(UKEY,u);cred={u,p};$('who').textContent=u;R={};draw();refreshAll()},
+ logout:async()=>{await Promise.all(firebase.apps.filter(a=>a.name!=='[DEFAULT]').map(a=>a.auth().signOut().catch(()=>{})));cred=null;R={};$('who').textContent='All your schools in one place';draw()},
+ refresh:refreshAll,retry:d=>load1(sch(d.s)),close:closeM,
+ payform:d=>payForm(d.s),dopay:d=>doPay(d.s),details:d=>details(d.s),nconf:d=>nconf(d.s,d.n),nrej:d=>nrej(d.s,d.n),
+ setend:d=>{const v=$('md1').value;if(!v)return mmsg('Pick a date.','bad');setEnd(d.s,new Date(v+'T23:59:59'))},
+ suspend:d=>{if(confirm('Suspend '+sch(d.s).name+' now? Staff are locked out until a payment or new end date is recorded.'))setEnd(d.s,new Date(2000,0,1))},
+ rmschool:d=>{if(!confirm('Remove this school from your list? The school and its data are not affected.'))return;schools=schools.filter(s=>s.id!==d.s);saveList();delete R[d.s];closeM();draw()},
+ addschool:()=>{const name=$('an').value.trim(),url=$('au').value.trim(),txt=$('ac').value,cfg={};
+  txt.replace(/["']?(apiKey|authDomain|projectId|storageBucket|messagingSenderId|appId)["']?\s*:\s*["']([^"']+)["']/g,(m,k,v)=>{cfg[k]=v});
+  const bad=t=>$('am').innerHTML='<div class="msg bad">'+t+'</div>';
+  if(!name)return bad('Enter the school name.');if(!cfg.apiKey||!cfg.projectId)return bad('The config must include apiKey and projectId. Paste the whole block from Firebase.');
+  if(url&&!/^https?:\/\//i.test(url))return bad('The link must start with https://');if(schools.some(s=>s.id===cfg.projectId))return bad('That school is already in your list.');
+  const s={id:cfg.projectId,name,url,cfg};schools.push(s);saveList();draw();if(cred)load1(s)},
+ copybk:async()=>{const t=$('bk');t.select();try{await navigator.clipboard.writeText(t.value)}catch(e){document.execCommand('copy')}$('bm').innerHTML='<div class="msg good">Copied.</div>'},
+ importbk:()=>{try{const a=JSON.parse($('bi').value);if(!Array.isArray(a)||a.some(x=>!x.id||!x.name||!x.cfg||!x.cfg.apiKey||!x.cfg.projectId))throw 0;a.forEach(x=>{if(!schools.some(s=>s.id===x.id))schools.push({id:String(x.id),name:String(x.name),url:/^https?:\/\//i.test(x.url||'')?x.url:'',cfg:x.cfg})});saveList();draw();if(cred)refreshAll()}catch(e){$('bm').innerHTML='<div class="msg bad">That is not a valid copy of the list.</div>'}}
+};
+document.addEventListener('click',e=>{const a=e.target.closest('[data-a]');if(a&&A[a.dataset.a])A[a.dataset.a](a.dataset)});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&(e.target.id==='lp'||e.target.id==='lu'))A.login()});
+$('md').addEventListener('click',e=>{if(e.target.id==='md')closeM()});
+draw();
+</script></body></html>
