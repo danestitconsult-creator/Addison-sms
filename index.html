@@ -31,7 +31,7 @@ header{padding-left:calc(16px + env(safe-area-inset-left,0px));padding-right:cal
 <header><div style="display:flex;align-items:center;gap:10px"><img id="hlogo" src="icon-192.png" alt="" width="34" height="34" style="border-radius:8px;object-fit:contain;background:#fff"><div><b id="hn">School System</b><div class="mut" id="hu" style="color:#bfe3cf"></div></div></div><div style="display:flex;gap:8px;align-items:center"><span id="net" class="tag ok">Online</span><button id="lo" class="s alt hide">Log out</button></div></header>
 <nav id="nav" class="hide"></nav>
 <main><section id="auth" class="card" style="max-width:420px;margin:30px auto"><h2 id="at">Log in</h2><div class="mut" style="margin:-4px 0 10px">School System · version 3.1</div>
- <div id="regf" class="hide"><label>Full name</label><input id="rn"></div><div id="regj" class="hide"><label>I am joining as</label><select id="rrole"><option value="teacher">Teacher</option><option value="accountant">Accountant</option><option value="parent">Parent or guardian</option><option value="admin">Head (first set-up of a new school only)</option></select><label>School join code (from the head)</label><input id="rj" autocapitalize="characters"></div><label>Username</label><input id="un" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username"><label>Password</label><input id="pw" type="password" autocomplete="current-password">
+ <div id="regf" class="hide"><label>Full name</label><input id="rn"></div><div id="regj" class="hide"><label>I am joining as</label><select id="rrole"><option value="teacher">Teacher</option><option value="accountant">Accountant</option><option value="parent">Parent or guardian</option><option value="admin">Head of school</option><option value="owner">Platform owner (first set-up only)</option></select><label>School code or invite (from the platform owner or your head)</label><input id="rj" autocapitalize="characters" autocorrect="off" spellcheck="false"><div id="jm" class="mut" style="margin-top:4px"></div></div><label>Username</label><input id="un" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="username"><label>Password</label><input id="pw" type="password" autocomplete="current-password">
  <button id="go" class="g">Log in</button><button id="sw" class="alt">Create an account</button><div id="am"></div></section><div id="v"></div></main><div id="print"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -48,11 +48,11 @@ const IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='Mac
 function busy(t,fn){let b=document.getElementById('upd');if(!b){b=document.createElement('div');b.id='upd';document.body.appendChild(b)}b.style.display=t?'block':'none';b.textContent=t||'';b.onclick=fn||null}
 const wr=p=>navigator.onLine?p:Promise.race([p,new Promise(r=>setTimeout(r,1500))]);
 const $=i=>document.getElementById(i),esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const COL=n=>db.collection(n),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),m2=x=>Math.round(x*100)/100,sleep=ms=>new Promise(r=>setTimeout(r,ms)),NL=String.fromCharCode(10);
+let SID=null;const COL=n=>db.collection('schools').doc(SID).collection(n),GL=n=>db.collection(n),uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,6),m2=x=>Math.round(x*100)/100,sleep=ms=>new Promise(r=>setTimeout(r,ms)),NL=String.fromCharCode(10);
 const say=(el,t,c)=>{$(el).innerHTML=t?`<div class="msg ${c||''}">${t}</div>`:''};
 const ROLES={owner:'Platform owner (billing)',admin:'Head or administrator',teacher:'Teacher',accountant:'Accountant',parent:'Parent or guardian',pending:'Waiting for a role'};
-const TABS={owner:['dash','bill','adm','ids','stu','cls','att','sta','tt','sc','rc','fee','acc','nt','set'],admin:['dash','adm','ids','stu','cls','att','sta','tt','sc','rc','fee','acc','nt','set'],teacher:['me','att','sc','rc','tt','stu','nt'],accountant:['me','fee','acc','stu','nt'],parent:['me','portal'],pending:[]};
-const TN={me:'My profile',ids:'ID cards',dash:'Dashboard',bill:'Platform billing',adm:'Admissions',stu:'Students',cls:'Classes and subjects',att:'Attendance',sta:'Staff attendance',tt:'Timetable',sc:'Scores',rc:'Report cards',fee:'Fees',acc:'Accounts',nt:'Notices',set:'Setup',portal:'My children'};
+const TABS={owner:['schools','dash','bill','adm','ids','stu','cls','att','sta','tt','sc','rc','fee','acc','nt','set'],admin:['dash','adm','ids','stu','cls','att','sta','tt','sc','rc','fee','acc','nt','set'],teacher:['me','att','sc','rc','tt','stu','nt'],accountant:['me','fee','acc','stu','nt'],parent:['me','portal'],pending:[]};
+const TN={schools:'All schools',me:'My profile',ids:'ID cards',dash:'Dashboard',bill:'Platform billing',adm:'Admissions',stu:'Students',cls:'Classes and subjects',att:'Attendance',sta:'Staff attendance',tt:'Timetable',sc:'Scores',rc:'Report cards',fee:'Fees',acc:'Accounts',nt:'Notices',set:'Setup',portal:'My children'};
 const LEVELS=['KG 1','KG 2','Basic 1','Basic 2','Basic 3','Basic 4','Basic 5','Basic 6','Basic 7 (JHS 1)','Basic 8 (JHS 2)','Basic 9 (JHS 3)'],DAYS=['Mon','Tue','Wed','Thu','Fri'];
 const GR0=['80|A|Excellent','70|B|Very good','60|C|Good','50|D|Credit','40|E|Pass','0|F|Needs improvement'].join(NL);
 const PER0=['Assembly|07:45-08:00|break','Period 1|08:00-08:40|lesson','Period 2|08:40-09:20|lesson','Period 3|09:20-10:00|lesson','Break|10:00-10:30|break','Period 4|10:30-11:10|lesson','Period 5|11:10-11:50|lesson','Period 6|11:50-12:30|lesson','Lunch|12:30-13:00|break','Period 7|13:00-13:40|lesson','Period 8|13:40-14:20|lesson'].join(NL);
@@ -64,7 +64,7 @@ const why=e=>e&&e.code==='permission-denied'?'Your role is not allowed to do tha
 addEventListener('online',net);addEventListener('offline',net);function net(){$('net').textContent=navigator.onLine?'Online':'Offline: saving on this device';$('net').className='tag '+(navigator.onLine?'ok':'warn')}
 const V=h=>{$('v').innerHTML=h},err=t=>{if($('err'))$('err').textContent=t||''},printIt=h=>printDoc(h);
 let devId=localStorage.getItem('sms_dev');if(!devId){devId=Math.random().toString(36).slice(2,4).toUpperCase();localStorage.setItem('sms_dev',devId)}
-const nextNo=p=>{const n=+(localStorage.getItem('sms_ctr')||0)+1;localStorage.setItem('sms_ctr',n);return p+'-'+String(n).padStart(4,'0')};
+const nextNo=async p=>{let m=+(localStorage.getItem('sms_ctr')||0);try{const q=await COL('students').where('no','>=',p+'-').where('no','<=',p+'-\uf8ff').orderBy('no','desc').limit(1).get();if(!q.empty)m=Math.max(m,parseInt(String(q.docs[0].data().no).split('-').pop(),10)||0)}catch(e){}const n=m+1;try{localStorage.setItem('sms_ctr',n)}catch(e){}return p+'-'+String(n).padStart(4,'0')};
 const sub=(q,f)=>scr.push(q.onSnapshot(f,e=>console.log(e.code))),rows=sn=>sn.docs.map(d=>({id:d.id,...d.data()})),byName=(a,b)=>String(a.name).localeCompare(String(b.name));
 const gradeOf=t=>{for(const l of CFG.grades.split(NL)){const a=l.split('|');if(a.length>=2&&t>=+a[0])return {g:a[1],r:a[2]||''}}return {g:'-',r:''}};
 const rankOf=(vals,v)=>1+vals.filter(x=>x>v).length,ord=n=>n+(['th','st','nd','rd'][(n%100>10&&n%100<14)?0:Math.min(n%10,4)>3?0:n%10]||'th');
@@ -74,29 +74,51 @@ const age=d=>d?Math.max(0,Math.floor((Date.now()-new Date(d))/315576e5)):'';
 const mail=async u=>{const b=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(u.trim().toLowerCase()));return [...new Uint8Array(b)].slice(0,16).map(x=>x.toString(16).padStart(2,'0')).join('')+'@sms.local'};
 let reg=false;
 $('sw').onclick=()=>{reg=!reg;$('regf').classList.toggle('hide',!reg);$('regj').classList.toggle('hide',!reg);$('pw').setAttribute('autocomplete',reg?'new-password':'current-password');$('at').textContent=reg?'Create account':'Log in';$('go').textContent=reg?'Create account':'Log in';$('sw').textContent=reg?'I have an account':'Create an account';say('am','')};
+let regBusy=false,JC=null;
+async function chkCode(){const c=$('rj').value.trim().toUpperCase().replace(/[^A-Z0-9]/g,''),m=$('jm');$('rj').value=c;JC=null;m.textContent='';if(c.length<8)return;
+ try{const d=await GL('codes').doc(c).get();if(!d.exists){m.textContent='Code not found. Check it and try again.';return}if(d.data().used){m.textContent='That invite was already used. Ask the platform owner for a new one.';return}
+  JC={code:c,...d.data()};const hd=JC.kind==='head',r=$('rrole');m.textContent=(hd?'You are starting: ':'You are joining: ')+JC.name;
+  [...r.options].forEach(o=>{o.disabled=hd?o.value!=='admin':(o.value==='admin'||o.value==='owner')});r.value=hd?'admin':(['teacher','accountant','parent'].includes(r.value)?r.value:'teacher')}
+ catch(e){m.textContent='Could not check the code. Check the internet connection.'}}
+$('rj').onchange=chkCode;
 $('go').onclick=async()=>{const u=$('un').value,p=$('pw').value;if(!u.trim()||!p)return say('am','Enter a username and a password.','bad');
  try{const em=await mail(u),pp=p+'#sms-2026';
-  if(reg){if(!$('rn').value.trim())return say('am','Enter your full name.','bad');if($('rrole').value!=='admin'&&!$('rj').value.trim())return say('am','Enter the join code from your head.','bad');const c=await auth.createUserWithEmailAndPassword(em,pp);
-   await COL('users').doc(c.user.uid).set({name:$('rn').value.trim(),username:u.trim().toLowerCase(),role:'pending',requestedRole:$('rrole').value,joinCode:$('rrole').value==='admin'?'':$('rj').value.trim().toUpperCase(),children:[],active:true,created:TS()})}
-  else await auth.signInWithEmailAndPassword(em,pp)}
- catch(e){say('am',e.code==='auth/email-already-in-use'?'That username is taken.':'Could not continue. Check your details.','bad')}};
+  if(reg){const rn=$('rn').value.trim(),rr=$('rrole').value;if(!rn)return say('am','Enter your full name.','bad');
+   if(rr==='owner'){regBusy=true;try{await auth.createUserWithEmailAndPassword(em,pp)}finally{regBusy=false}return enter(auth.currentUser)}
+   await chkCode();if(!JC)return say('am',$('jm').textContent||'Enter the school code or invite.','bad');
+   regBusy=true;let c;try{c=await auth.createUserWithEmailAndPassword(em,pp);const hd=JC.kind==='head',b=db.batch();
+    b.set(GL('userIndex').doc(c.user.uid),{schoolId:JC.sid});
+    b.set(GL('schools').doc(JC.sid).collection('users').doc(c.user.uid),{name:rn,username:u.trim().toLowerCase(),role:hd?'admin':'pending',requestedRole:hd?'admin':rr,joinCode:JC.code,children:[],active:true,created:TS()});
+    if(hd)b.update(GL('codes').doc(JC.code),{used:true,usedBy:c.user.uid});await b.commit()}
+   catch(e){if(c&&c.user)await c.user.delete().catch(()=>{});throw e}finally{regBusy=false}
+   return enter(auth.currentUser)}
+  await auth.signInWithEmailAndPassword(em,pp)}
+ catch(e){say('am',e.code==='auth/email-already-in-use'?'That username is taken.':e.code==='permission-denied'?'That code is not valid any more.':'Could not continue. Check your details.','bad')}};
 $('lo').onclick=()=>auth.signOut();
-auth.onAuthStateChanged(async u=>{
- stop();if(!u){U=null;$('auth').classList.remove('hide');$('v').innerHTML='';$('nav').classList.add('hide');$('lo').classList.add('hide');$('hu').textContent='';return}
- let s;for(let i=0;i<8;i++){s=await COL('users').doc(u.uid).get();if(s.exists)break;await sleep(500)}
- if(!s.exists){await auth.signOut();return say('am','Profile not found. Create the account again.','bad')}
- U={uid:u.uid,...s.data()};$('auth').classList.add('hide');$('lo').classList.remove('hide');net();begin()});
+function noProfile(u){$('auth').classList.add('hide');$('lo').classList.remove('hide');$('nav').classList.add('hide');V(`<div class="card"><h2>Account not linked to a school</h2><p>This account is not part of a school yet. Log out and create the account again with your school's invite link or code.</p><p class="mut">Platform owner? In the Firebase console open Firestore, start a collection called <b>owners</b>, and add a document whose ID is the number below. Then log out and log in again.</p><div class="msg" style="word-break:break-all;user-select:all">${esc(u.uid)}</div></div>`)}
+async function enter(u){stop();
+ if(!u){U=null;SID=null;$('auth').classList.remove('hide');$('v').innerHTML='';$('nav').classList.add('hide');$('lo').classList.add('hide');$('hu').textContent='';return}
+ try{const o=await GL('owners').doc(u.uid).get();
+  if(o.exists){SID=localStorage.getItem('sms_as')||null;U={uid:u.uid,name:(o.data()||{}).name||'Platform owner',role:'owner',active:true}}
+  else{const ix=await GL('userIndex').doc(u.uid).get();if(!ix.exists)return noProfile(u);SID=ix.data().schoolId;const s=await COL('users').doc(u.uid).get();if(!s.exists)return noProfile(u);U={uid:u.uid,...s.data()}}}
+ catch(e){return say('am','Could not open your account. '+why(e),'bad')}
+ $('auth').classList.add('hide');$('lo').classList.remove('hide');net();begin()}
+auth.onAuthStateChanged(u=>{if(!regBusy)enter(u)});
+(function(){const j=new URLSearchParams(location.search).get('join');if(j){$('sw').click();$('rj').value=j;chkCode()}})();
 function stop(){unsubs.forEach(f=>f());unsubs=[];scr.forEach(f=>f());scr=[]}
 function begin(){$('hu').textContent=U.name+' · '+ROLES[U.role]+' · v3.1';
  if(!U.active||U.role==='pending'){V(`<div class="card"><h2>${U.active?'Waiting for a role':'Account disabled'}</h2><p>${U.active?'The school administrator must give your account a role. Close and reopen the app after that.':'Ask the school administrator.'}</p></div>`);return}
+ if(U.role==='owner'&&!SID){$('nav').classList.remove('hide');tab='schools';nav();go('schools');return}
  const L=(q,f)=>unsubs.push(q.onSnapshot(f,e=>console.log(e.code)));
+ if(U.role==='admin')COL('config').doc('main').get().then(s=>{if(s.exists&&!s.data().joinCode)mkJoin(s.data().name).catch(()=>{})}).catch(()=>{});
  L(COL('config').doc('main'),s=>{if(s.exists)CFG={...CFG,...s.data()};if(!CFG.grades)CFG.grades=GR0;if(!CFG.periods)CFG.periods=PER0;$('hn').textContent=CFG.name;$('hlogo').src=CFG.logo||'icon-192.png';const nl=locked();if(LK!==null&&LK!==nl&&U&&tab)go(tab,true);LK=nl});
  L(COL('classes'),sn=>{CLS=rows(sn).sort((a,b)=>(a.order||0)-(b.order||0)||a.name.localeCompare(b.name))});L(COL('subjects'),sn=>{SUBJ=rows(sn).sort(byName)});
  L(COL('assignments'),sn=>{ASG={};sn.docs.forEach(d=>{ASG[d.id]=d.data()})});
  if(is('admin','accountant'))L(COL('feeplans'),sn=>{PLANS={};sn.docs.forEach(d=>{PLANS[d.id]=d.data()})});
- $('nav').classList.remove('hide');tab=TABS[U.role][0];nav();go(tab)}
-function nav(){$('nav').innerHTML=TABS[U.role].map(t=>`<button data-t="${t}" class="${t===tab?'on':''}">${TN[t]}</button>`).join('')}
-function go(t,keep){if(locked()&&!(t==='set'&&U&&U.role==='admin')){scr.forEach(f=>f());scr=[];tab=t;nav();return lockView()}scr.forEach(f=>f());scr=[];tab=t;if(!keep)st={};nav();({dash:vDash,adm:vAdm,stu:vStu,cls:vCls,att:vAtt,sta:vSta,tt:vTT,sc:vSc,rc:vRc,fee:vFee,acc:vAcc,nt:vNt,set:vSet,portal:vPortal,bill:vBill,me:vMe,ids:vIds})[t]()}
+ $('nav').classList.remove('hide');tab=U.role==='owner'&&SID?'dash':tabsOf()[0];nav();go(tab)}
+const tabsOf=()=>U.role==='owner'&&!SID?['schools']:TABS[U.role];
+function nav(){$('nav').innerHTML=tabsOf().map(t=>`<button data-t="${t}" class="${t===tab?'on':''}">${TN[t]}</button>`).join('')}
+function go(t,keep){if(locked()&&!(t==='set'&&U&&U.role==='admin')){scr.forEach(f=>f());scr=[];tab=t;nav();return lockView()}scr.forEach(f=>f());scr=[];tab=t;if(!keep)st={};nav();({schools:vSchools,dash:vDash,adm:vAdm,stu:vStu,cls:vCls,att:vAtt,sta:vSta,tt:vTT,sc:vSc,rc:vRc,fee:vFee,acc:vAcc,nt:vNt,set:vSet,portal:vPortal,bill:vBill,me:vMe,ids:vIds})[t]()}
 const classOpts=(sel,list)=>(list||CLS).map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${esc(c.name)}</option>`).join('');
 const stuLine=s=>`<b>${esc(s.name)}</b> <span class="mut">${esc(s.no)} · ${esc(s.className||'')}</span>`;
 
@@ -118,8 +140,8 @@ function aDraw(){if(!$('al'))return;const f=st.af||'applied';$('af').innerHTML=[
  $('al').innerHTML='<table><tr><th>Applicant</th><th>Guardian</th><th>Level</th><th></th></tr>'+(st.ap.filter(a=>a.status===f).map(a=>{const opts=CLS.filter(c=>c.level===a.level);return `<tr><td><b>${esc(a.name)}</b><br><span class="mut">${esc(a.sex)} · ${age(a.dob)} yrs · ${fdt(a.at)}</span></td><td>${esc(a.guardian)}<br><span class="mut">${esc(a.phone||'')}</span></td><td>${esc(a.level)}<br><span class="mut">${esc(a.prev||'')}</span></td><td>${f==='applied'?`<select id="ac_${a.id}"><option value="">Class…</option>${classOpts('',opts.length?opts:CLS)}</select><button class="s g" data-a="aadm" data-id="${a.id}">Admit</button> <button class="s r" data-a="adec" data-id="${a.id}">Decline</button>`:`<span class="mut">${esc(a.studentId?'Admitted':'Declined')}</span>`}</td></tr>`}).join('')||'<tr><td colspan=4 class="mut">None.</td></tr>')+'</table>'}
 async function aapp(){const g=k=>$(k).value.trim();if(!g('a1')||!g('a5'))return err('Enter the child\'s name and the guardian.');
  if(!$('a10').checked)return err('The parent or guardian must give consent first.');try{await COL('applications').add({name:g('a1'),sex:$('a2').value,dob:$('a3').value,level:$('a4').value,guardian:g('a5'),phone:g('a6'),address:g('a7'),prev:g('a8'),notes:g('a9'),consent:true,photo:stuPhoto||'',status:'applied',at:TS()});go('adm')}catch(e){err(why(e))}}
-async function aadm(id){const a=(st.ap||[]).find(x=>x.id===id);if(!a)return alert('Reload the page and try again.');const sel=$('ac_'+id),cid=sel?sel.value:'',c=cls(cid);if(!cid)return alert('Choose a class first.');const sid=uid(),b=db.batch();
- b.set(COL('students').doc(sid),{no:nextNo(CFG.code+String(new Date().getFullYear()).slice(2)),name:a.name,nameLower:a.name.toLowerCase(),photo:a.photo||'',sex:a.sex,dob:a.dob,level:c.level||a.level,classId:cid,className:c.name,guardian:a.guardian,phone:a.phone,address:a.address,health:'',discount:0,status:'active',admitted:today(),appId:id,at:TS()});
+async function aadm(id){const a=(st.ap||[]).find(x=>x.id===id);if(!a)return alert('Reload the page and try again.');const sel=$('ac_'+id),cid=sel?sel.value:'',c=cls(cid);if(!cid)return alert('Choose a class first.');const NO=await nextNo(CFG.code+String(new Date().getFullYear()).slice(2)),sid=uid(),b=db.batch();
+ b.set(COL('students').doc(sid),{no:NO,name:a.name,nameLower:a.name.toLowerCase(),photo:a.photo||'',sex:a.sex,dob:a.dob,level:c.level||a.level,classId:cid,className:c.name,guardian:a.guardian,phone:a.phone,address:a.address,health:'',discount:0,status:'active',admitted:today(),appId:id,at:TS()});
  b.update(COL('applications').doc(id),{status:'admitted',studentId:sid});try{await Promise.race([b.commit(),sleep(4000)])}catch(e){alert(why(e))}}
 
 /* ---------- students ---------- */
@@ -267,7 +289,7 @@ async function npost(){const t=$('n1').value.trim(),b=$('n3').value.trim();if(!t
 /* ---------- parents portal ---------- */
 async function vPortal(){V('<div class="card">Loading…</div>');
  try{const kids=(U.children||[]);if(!kids.length)return V('<div class="card"><h2>My children</h2><p>The school has not linked any children to your account yet. Visit the school office.</p></div>');
-  const out=[];for(const sid of kids){const s=await COL('students').doc(sid).get();if(!s.exists)continue;const st0={id:sid,...s.data()},inv=rows(await COL('invoices').where('sid','==',sid).get()),cards=rows(await COL('cards').where('sid','==',sid).get()).filter(c=>c.published).sort((a,b)=>b.term.localeCompare(a.term)),att=(await COL('attendance').where('classId','==',st0.classId).get()).docs.map(d=>d.data());
+  const out=[];for(const sid of kids){const s=await COL('students').doc(sid).get();if(!s.exists)continue;const st0={id:sid,...s.data()},inv=rows(await COL('invoices').where('sid','==',sid).get()),cards=rows(await COL('cards').where('sid','==',sid).where('published','==',true).get()).filter(c=>c.published).sort((a,b)=>b.term.localeCompare(a.term)),att=(await COL('attendance').where('classId','==',st0.classId).get()).docs.map(d=>d.data());
    out.push({s:st0,inv,cards,att:att.reduce((r,a)=>{const m=(a.marks||{})[sid];if(m){r.days++;if(m==='P'||m==='L')r.ok++}return r},{days:0,ok:0})})}
   V(out.map(o=>`<div class="card"><h2>${esc(o.s.name)} <span class="mut">${esc(o.s.no)} · ${esc(o.s.className)}</span></h2>
    <h3>Fees</h3>${o.inv.map(i=>`<div>${esc(termName(i.term))}: billed ${money(i.total)}, paid ${money(i.paid)}, <b>owing ${money(i.total-i.paid)}</b> <button class="s" data-a="iprint" data-id="${i.id}">Invoice</button></div>`).join('')||'<span class="mut">No invoices yet.</span>'}
@@ -375,7 +397,7 @@ async function bkdl(){say('bkm','Preparing…');try{const o={at:new Date().toISO
 async function csave(){const n=$('c1').value.trim(),lv=$('c2').value,tc=$('c3').value,sj=[...document.querySelectorAll('[data-sj]')].filter(x=>x.checked).map(x=>x.dataset.sj);if(!n)return err('Enter the class name.');
  const t=ULIST.find(x=>x.id===tc),d={name:n,level:lv,order:LEVELS.indexOf(lv),classTeacherId:tc||'',classTeacherName:t?t.name:'',subjects:sj};
  try{if(st.ce)await COL('classes').doc(st.ce).update(d);else await COL('classes').add(d);st.ce=null;go('cls')}catch(e){err(why(e))}}
-async function asgSave(id){const c=cls(id),b=db.batch();(c.subjects||[]).forEach(s=>{const v=$('ag_'+s).value,t=ULIST.find(x=>x.id===v);b.set(COL('assignments').doc(id+'_'+s),{classId:id,subjectId:s,teacherId:v||'',teacherName:t?t.name:''})});try{await b.commit();say('agm','Saved.','good')}catch(e){say('agm',why(e),'bad')}}
+async function asgSave(id){const c=cls(id),b=db.batch();(c.subjects||[]).forEach(s=>{const v=$('ag_'+s).value,t=ULIST.find(x=>x.id===v);b.set(COL('assignments').doc(id+'_'+s),{classId:id,subjectId:s,teacherId:v||'',teacherName:t?t.name:''})});b.update(COL('classes').doc(id),{teacherIds:[...new Set((c.subjects||[]).map(s=>$('ag_'+s).value).filter(Boolean))]});try{await b.commit();say('agm','Saved.','good')}catch(e){say('agm',why(e),'bad')}}
 
 /* ---------- attendance, scores, report actions ---------- */
 async function atsave(){const cid=st.ac,date=st.ad,mk={...st.mk},n=st.S.length;try{await wr(COL('attendance').doc(cid+'_'+date).set({classId:cid,date,marks:mk,by:U.name,at:TS()}));st.saved=true;say('atm',(navigator.onLine?'Attendance saved for ':'Saved on this device, will sync when online: ')+fd(date)+'.','good')}catch(e){say('atm',why(e),'bad')}}
@@ -396,7 +418,7 @@ const cardPrintHook=true;
 const PRINT={rcprint:d=>rcprintOne(d.id)};
 const A={
  idclass:idclass,idstaff:idstaff,idme:idMe,idstu:idOne,
- gopay:()=>go('set'),approve:d=>approve(d.id,d.r),rejectuser:d=>rejectuser(d.id),newjoin:newjoin,rcpdf:d=>rcpdf(d.id),rcmail:d=>rcmail(d.id),ttcopy:ttcopy,ttclear:ttclear,ttprint:ttprint,pnsend:pnsend,paysave:paysave,pconfirm:pconfirm,preject:preject,prsave:prsave,plremove:plremove,pdsave:pdsave,
+ gopay:()=>go('set'),approve:d=>approve(d.id,d.r),rejectuser:d=>rejectuser(d.id),newjoin:newjoin,nsch:newSchool,sinv:d=>schoolInvite(d.id,d.n),sopn:d=>openSchool(d.id),scnt:d=>schoolCount(d.id),shcode:d=>shareCode(d.m),cpcode:d=>copyCode(d.m),rcpdf:d=>rcpdf(d.id),rcmail:d=>rcmail(d.id),ttcopy:ttcopy,ttclear:ttclear,ttprint:ttprint,pnsend:pnsend,paysave:paysave,pconfirm:pconfirm,preject:preject,prsave:prsave,plremove:plremove,pdsave:pdsave,
  bplans:bplans,bsadd:bsadd,bsdel:d=>bsdel(d.i),bpay2:bpay2,bdate:bdate,bsusp:bsusp,sexp:sexp,rccheck:rccheck,logout2:()=>auth.signOut(),
  aapp:aapp,afil:d=>{st.af=d.f;aDraw()},aadm:d=>aadm(d.id),adec:async d=>{if(confirm('Decline this application?'))await COL('applications').doc(d.id).update({status:'declined'})},
  ssearch:ssearch,sopen:d=>sopen(d.id),ssave:ssave,sclose:()=>{$('sfm').innerHTML=''},sprint:()=>{const L=st.S||[];printIt(`<div class="rcard"><h1>${esc(CFG.name)}</h1><div class="c">CLASS LIST · ${esc(cls(st.sc).name)}</div><table style="margin-top:10px"><tr><th>#</th><th>Student no</th><th>Name</th><th>Sex</th><th>Guardian</th><th>Phone</th></tr>${L.map((s,i)=>`<tr><td>${i+1}</td><td>${esc(s.no)}</td><td>${esc(s.name)}</td><td>${esc(s.sex)}</td><td>${esc(s.guardian||'')}</td><td>${esc(s.phone||'')}</td></tr>`).join('')}</table></div>`)},
@@ -555,11 +577,40 @@ async function preject(id){const reason=prompt('Reason for rejecting (the head w
 
 
 /* ---------- staff join codes and approval (per school) ---------- */
-function joinHtml(){return `<div class="card"><h2>Staff join code</h2><p class="mut">Give this code to staff. They enter it when they create their account and choose their role. You then approve them below.</p><div class="row"><div><div class="big" style="letter-spacing:3px">${esc(CFG.joinCode||'Not set')}</div></div><button class="alt" data-a="newjoin">Make a new code</button></div><h3>Waiting for approval</h3><div id="pendl" class="tw"><span class="mut">Loading…</span></div></div>`}
+function joinHtml(){return `<div class="card"><h2>Staff join code</h2><p class="mut">Give this code to staff. They enter it when they create their account and choose their role. You then approve them below.</p><div class="row"><div><div class="big" style="letter-spacing:3px">${esc(CFG.joinCode?grp(CFG.joinCode):'Not set')}</div></div><button class="alt" data-a="newjoin">Make a new code</button></div>${CFG.joinCode?`<div class="mut" style="word-break:break-all;margin-top:6px">${esc(linkFor(CFG.joinCode))}</div><button class="g" data-a="shcode" data-m="${esc(joinMsg(CFG.joinCode))}">Share on WhatsApp or Messages</button>`:''}<h3>Waiting for approval</h3><div id="pendl" class="tw"><span class="mut">Loading…</span></div></div>`}
 function joinWire(){if(!$('pendl'))return;sub(COL('users').where('role','==','pending'),sn=>{const P=rows(sn).filter(u=>u.active!==false);const el=$('pendl');if(!el)return;el.innerHTML=P.length?'<table><tr><th>Name</th><th>Joining as</th><th></th></tr>'+P.map(u=>`<tr><td>${esc(u.name)}<br><span class="mut">${esc(u.username||'')}</span></td><td>${esc(ROLES[u.requestedRole]||u.requestedRole||'-')}</td><td><button class="s g" data-a="approve" data-id="${u.id}" data-r="${esc(u.requestedRole||'teacher')}">Approve</button> <button class="s r" data-a="rejectuser" data-id="${u.id}">Turn down</button></td></tr>`).join('')+'</table>':'<span class="mut">No one is waiting.</span>'})}
 async function approve(id,r){if(!['teacher','accountant','parent','admin'].includes(r))return alert('Unknown role.');try{await COL('users').doc(id).update({role:r});go('set',true)}catch(e){alert(why(e))}}
 async function rejectuser(id){if(!confirm('Turn down this account? They will not be able to use the system.'))return;try{await COL('users').doc(id).update({active:false});go('set',true)}catch(e){alert(why(e))}}
-async function newjoin(){const ch='ABCDEFGHJKMNPQRSTUVWXYZ23456789';let c='';for(let i=0;i<6;i++)c+=ch[Math.floor(Math.random()*ch.length)];try{await COL('config').doc('main').set({joinCode:c},{merge:true});go('set',true)}catch(e){alert(why(e))}}
+const CH='ABCDEFGHJKMNPQRSTUVWXYZ23456789',grp=c=>c.slice(0,4)+' '+c.slice(4),linkFor=c=>new URL('./?join='+c,location.href).href,joinMsg=c=>'Join '+CFG.name+' on the School System. Open this link and create your account: '+linkFor(c)+' (Code: '+grp(c)+')';
+async function mkCode(sid,kind,name){for(let i=0;i<5;i++){let c='';crypto.getRandomValues(new Uint8Array(8)).forEach(x=>{c+=CH[x%CH.length]});
+ if((await GL('codes').doc(c).get()).exists)continue;await GL('codes').doc(c).set({sid,kind,name,used:false,created:TS()});return c}throw new Error('Could not make a code. Try again.')}
+async function mkJoin(n){const old=CFG.joinCode,c=await mkCode(SID,'staff',n||CFG.name||'School');await COL('config').doc('main').set({joinCode:c},{merge:true});if(old)GL('codes').doc(old).delete().catch(()=>{})}
+async function newjoin(){try{await mkJoin();go('set',true)}catch(e){alert(why(e))}}
+const shareCode=t=>{if(navigator.share)navigator.share({text:t}).catch(()=>{});else copyCode(t)},copyCode=t=>{try{navigator.clipboard.writeText(t).then(()=>alert('Copied.'),()=>prompt('Copy this message:',t))}catch(e){prompt('Copy this message:',t)}};
+const inviteHtml=(n,c)=>{const t='You are invited to set up '+n+' on the School System. Open this link, create your account, and you will be the head of the school: '+linkFor(c)+' (Code: '+grp(c)+')';return `<div class="msg good"><div class="mut">Head invite for ${esc(n)} (works once)</div><div class="big" style="letter-spacing:3px">${grp(c)}</div><div class="mut" style="word-break:break-all">${esc(linkFor(c))}</div><button class="g" data-a="shcode" data-m="${esc(t)}">Share on WhatsApp or Messages</button><button class="alt" data-a="cpcode" data-m="${esc(t)}">Copy the message</button></div>`};
+const subTag=t=>{const e=dateOf(t);if(!e)return{t:'No end date',k:'inf',s:''};const d=Math.ceil((e-Date.now())/864e5);return d<0?{t:'Ended',k:'bad',s:'ended '+(-d)+' days ago'}:d<=14?{t:'Renew soon',k:'warn',s:d+' days left'}:{t:'Active',k:'ok',s:d+' days left'}};
+async function newSchool(){const n=$('sn1').value.trim();if(!n)return say('snm','Enter the school name.','bad');
+ const id='s'+uid(),code=(n.replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase()+'XXX').slice(0,3);
+ try{const b=db.batch();b.set(GL('schools').doc(id),{name:n,created:TS()});b.set(GL('schools').doc(id).collection('config').doc('main'),{name:n,code:code,created:TS()});await b.commit();
+  const c=await mkCode(id,'head',n);$('sn1').value='';$('snm').innerHTML=inviteHtml(n,c);schoolList()}catch(e){say('snm',why(e),'bad')}}
+async function schoolInvite(id,n){try{const c=await mkCode(id,'head',n);$('iv_'+id).innerHTML=inviteHtml(n,c)}catch(e){say('iv_'+id,why(e),'bad')}}
+function openSchool(id){try{localStorage.setItem('sms_as',id)}catch(e){}location.reload()}
+async function schoolCount(id){const el=$('sc_'+id);el.textContent='Counting…';try{el.textContent=(await GL('schools').doc(id).collection('students').where('status','==','active').get()).size+' students'}catch(e){el.textContent=why(e)}}
+function vSchools(){V(`<div class="card"><h2>Add a school</h2><p class="mut">Type the school's name and tap the button. You get an invite for the head. When the head opens it and creates an account, they become the head of that school. Nothing to set up in Firebase.</p><div class="row"><div><label>School name</label><input id="sn1"></div><button class="g" data-a="nsch">Create school and invite the head</button></div><div id="snm"></div></div><div id="stot"></div><div class="card"><h2>All schools</h2><div id="sli">Loading…</div></div>`);schoolList()}
+async function schoolList(){const el=$('sli');if(!el)return;
+ try{const L=rows(await GL('schools').get()),day=today();
+  const D=await Promise.all(L.map(async s=>{const sc=GL('schools').doc(s.id),r={s,c:{}};
+   try{r.c=(await sc.collection('config').doc('main').get()).data()||{};const tkey=(r.c.year||'2026/2027').replace('/','-')+'_'+(r.c.term||'T1');
+    const [h,pn,at,iv,cl]=await Promise.all([sc.collection('users').where('role','==','admin').get(),sc.collection('paymentNotices').where('status','==','pending').get(),sc.collection('attendance').where('date','==',day).get(),sc.collection('invoices').where('term','==',tkey).get(),sc.collection('classes').get()]);
+    r.heads=h.docs.map(d=>d.data().name);r.pn=pn.size;r.cl=cl.size;r.mk=at.size;r.P=0;r.T=0;at.docs.forEach(d=>Object.values(d.data().marks||{}).forEach(m=>{r.T++;if(m==='P'||m==='L')r.P++}));
+    r.b=0;r.p=0;iv.docs.forEach(d=>{r.b+=+d.data().total||0;r.p+=+d.data().paid||0})}catch(e){r.err=why(e)}return r}));
+  const rk=r=>r.err?0:({bad:1,warn:2}[subTag(r.c.subUntil).k]||3);D.sort((a,b)=>rk(a)-rk(b)||String(a.c.name).localeCompare(String(b.c.name)));
+  let P=0,T=0,pn=0,ended=0,soon=0;const fee={};D.forEach(r=>{P+=r.P||0;T+=r.T||0;pn+=r.pn||0;const k=subTag(r.c.subUntil).k;if(k==='bad')ended++;if(k==='warn')soon++;const c=r.c.cur||'GHS',f=fee[c]=fee[c]||{b:0,p:0};f.b+=r.b||0;f.p+=r.p||0});
+  const card=(a,b,c)=>`<div class="card"><div class="mut">${a}</div><div class="big">${b}</div><div class="mut">${c||''}</div></div>`,fm=Object.keys(fee).map(c=>esc(c)+' '+Math.round(fee[c].p).toLocaleString()+' of '+Math.round(fee[c].b).toLocaleString()).join('<br>')||'-';
+  $('stot').innerHTML='<div class="row">'+card('Schools',D.length,ended+' ended · '+soon+' renew soon')+card('Attendance today',T?Math.round(P*100/T)+'%':'-',T?P+' of '+T+' present':'nothing marked yet')+card('Fees this term',fm,'collected of billed')+card('Payments to confirm',pn,'open the school, then Platform billing')+'</div>';
+  el.innerHTML=D.map(r=>{const s=r.s,n=esc(r.c.name||s.name),q=subTag(r.c.subUntil);if(r.err)return`<div class="card"><b>${n}</b><div class="msg bad">${esc(r.err)}</div></div>`;
+   return`<div class="card"><div style="display:flex;justify-content:space-between;gap:8px"><div><b style="font-size:16px">${n}</b> <span class="tag">${esc(r.c.code||'')}</span><div class="mut">Head: ${r.heads.length?esc(r.heads.join(', ')):'<b>not joined yet</b>'}</div></div><div style="text-align:right"><span class="tag ${q.k}">${q.t}</span><div class="mut">${q.s}</div></div></div><div class="mut" style="margin-top:6px">Attendance today: ${r.T?Math.round(r.P*100/r.T)+'%':'-'} (${r.mk} of ${r.cl} classes marked) · Fees: ${esc(r.c.cur||'GHS')} ${Math.round(r.p).toLocaleString()} of ${Math.round(r.b).toLocaleString()}${r.pn?' · <span class="tag warn">'+r.pn+' payment(s) to confirm</span>':''} · <span id="sc_${s.id}"><a href="#" data-a="scnt" data-id="${s.id}">Count students</a></span></div><div class="row" style="margin-top:8px"><button class="g" data-a="sopn" data-id="${s.id}">Open school</button><button class="alt" data-a="sinv" data-id="${s.id}" data-n="${n}">New head invite</button></div><div id="iv_${s.id}"></div></div>`}).join('')||'<span class="mut">No schools yet. Add the first one above.</span>'}
+ catch(e){el.innerHTML='<div class="msg bad">'+esc(why(e))+'</div>'}}
 
 /* ---------- report cards as PDF, and sending to the parent ---------- */
 async function cardFile(id){const d=await COL('cards').doc(id).get();if(!d.exists)throw new Error('This report card has not been computed yet.');const c={id,...d.data()};

@@ -1,5 +1,26 @@
 # School System: deployment checklist
 
+## START HERE: many schools, one Firebase project (v11)
+
+This replaces sections A, B and K below, which assumed one Firebase project per school. Nothing per school is set up in Firebase any more.
+
+**One time, you (the platform owner), about 10 minutes**
+1. [ ] Firebase console > Authentication > Sign-in method > Email/Password: ON. Firestore Database created in production mode.
+2. [ ] Firestore > Rules: delete everything, paste `firestore.rules` from this folder, Publish. It replaces your old rules.
+3. [ ] Upload index.html, sw.js, manifest.json, the icons and favicon to hosting. Do NOT upload firestore.rules.
+4. [ ] Open the app > Create an account > "I am joining as: Platform owner (first set-up only)". Choose a username and password. A screen shows a long ID.
+5. [ ] Firestore > Start collection `owners` > Document ID = that ID > add a field `name` with your name. Log out and log in again. You now see **All schools**.
+
+**For each new school, about 30 seconds**
+1. [ ] All schools > type the school name > "Create school and invite the head". Tap "Share on WhatsApp or Messages".
+2. [ ] The head opens the link, enters their name, a username and a password. They are the head straight away. The invite works once. If it gets lost, tap "New head invite" on that school's card.
+3. [ ] The head's Setup page shows the school's staff code and link (made automatically). Staff and parents open it, create accounts, and the head approves them under "Waiting for approval".
+4. [ ] You: All schools shows every school's subscription, attendance today, fees and payments waiting. Tap "Open school" to work inside one (Platform billing, etc.).
+
+**Moving the old addison-sms data:** the old layout is not readable by the new rules. In the OLD app, Setup > Backup > download the file. In the new app, open that school and use Setup > Restore from a backup file. Check the counts.
+
+**Rules Playground (replaces section C).** Paths now start with `/schools/{schoolId}/`. Test at least: a head updating `config/main` with `subUntil` DENIED; an owner doing the same ALLOWED; a teacher of another class reading a student DENIED; a parent reading a child who is not theirs DENIED; a head reading `subPayments` DENIED; a user from school A reading anything in school B DENIED; writing `scores` after lock DENIED; a staff member reading after `subUntil` has passed DENIED.
+
 Project: addison-sms. Do these in order. Tick each box before going to the next step.
 
 ## A. Before the school goes live
@@ -100,8 +121,7 @@ Run each one and check the result. A "denied" result is correct where stated.
    (the subscription runs on from the current end date) or Reject with a reason.
 5. Test this once with a small real amount before the first school pays.
 
-Note: each school is its own Firebase project, so the owner confirms payments in each school's app. A single
-dashboard for all schools is a separate build.
+Note: all schools share one Firebase project now; the owner opens each school from All schools.
 
 ## L. Staff joining, parent emails and report-card PDFs (new)
 
@@ -130,13 +150,6 @@ dashboard for all schools is a separate build.
 - [ ] Student staff numbers are generated from the account (STF-XXXXXX). Student numbers come from admission.
 - [ ] Check one printed card for size: it should be 86 × 54 mm, the size of a bank card.
 
-## O. Owner console (all schools in one place)
-Upload owner.html next to index.html, then open it at the same address with owner.html on the end.
-1. In EVERY school, create your owner account with the SAME username and password, and set role to owner in that school's users document.
-2. Log in to the console once. All schools load together. A school that cannot connect shows the reason and a Try again button.
-3. Add a new school by pasting its Firebase config. The list is stored on that device only: use "Back up or move your list" to keep a copy.
-4. Test: a head reports a payment, it appears under "Payments waiting for you", Confirm extends that school's end date.
-5. The console reads and writes the same documents as each school's own Billing page, so the Firestore rules you already published must allow the owner role. If a school shows "refused the request", fix that school's rules.
 
 ## P. iPhone checks (Safari and Add to Home Screen)
 1. Tapping a text box must NOT zoom the page.
